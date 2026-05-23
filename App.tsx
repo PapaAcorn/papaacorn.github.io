@@ -146,15 +146,21 @@ const createQuestions = (maxTier: number) =>
     { key: makeQuestionKey(anchor, 'f-to-c'), anchor, direction: 'f-to-c' as const },
   ]);
 
-const getProgress = (progress: ProgressByQuestion, key: string): QuestionProgress => ({
-  attempts: 0,
-  correct: 0,
-  wrong: 0,
-  streak: 0,
-  learned: false,
-  lastSeen: 0,
-  ...progress[key],
-});
+const getProgress = (progress: ProgressByQuestion, key: string): QuestionProgress => {
+  const defaults: QuestionProgress = {
+    attempts: 0,
+    correct: 0,
+    wrong: 0,
+    streak: 0,
+    learned: false,
+    lastSeen: 0,
+  };
+
+  return {
+    ...defaults,
+    ...(progress[key] ?? {}),
+  };
+};
 
 const getUnlockedTier = (progress: ProgressByQuestion) => {
   let unlockedTier = 1;
@@ -218,6 +224,16 @@ const getQuestionCopy = (question: Question) => {
   };
 };
 
+const getStartingSelection = (copy: ReturnType<typeof getQuestionCopy>) => {
+  const midpoint = Math.round((copy.min + copy.max) / 2 / copy.step) * copy.step;
+
+  if (Math.abs(midpoint - copy.target) > copy.tolerance) {
+    return midpoint;
+  }
+
+  return Math.abs(copy.min - copy.target) > copy.tolerance ? copy.min : copy.max;
+};
+
 export default function App() {
   const [progress, setProgress] = useState<ProgressByQuestion>({});
   const [question, setQuestion] = useState<Question>(() => createQuestions(1)[0]);
@@ -261,7 +277,7 @@ export default function App() {
   useEffect(() => {
     questionRef.current = question;
     const copy = getQuestionCopy(question);
-    setSelection(copy.target);
+    setSelection(getStartingSelection(copy));
     setFeedback(null);
   }, [question]);
 
