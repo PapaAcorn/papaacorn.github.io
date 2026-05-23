@@ -23,14 +23,14 @@
   "homepage": "https://github.com/PapaAcorn/papaacorn.github.io#readme",
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "^56.0.4",
-    "react": "19.2.3",
-    "react-native": "^0.85.3"
+    "expo": "~54.0.34",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
   },
   "devDependencies": {
-    "@expo/cli": "^56.1.11",
-    "@types/react": "^19.2.15",
-    "typescript": "^6.0.3"
+    "@expo/cli": "~54.0.24",
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
   },
   "private": true
 }
