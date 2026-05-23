@@ -1,0 +1,36 @@
+{
+  "name": "metric-sense",
+  "version": "1.0.0",
+  "description": "Offline mobile trainer for building metric and imperial measurement intuition",
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "test": "npm run typecheck",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PapaAcorn/papaacorn.github.io.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PapaAcorn/papaacorn.github.io/issues"
+  },
+  "homepage": "https://github.com/PapaAcorn/papaacorn.github.io#readme",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~54.0.34",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "devDependencies": {
+    "@expo/cli": "~54.0.24",
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
