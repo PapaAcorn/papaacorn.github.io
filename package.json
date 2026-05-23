@@ -1,0 +1,38 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "test": "npm run typecheck",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PapaAcorn/papaacorn.github.io.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PapaAcorn/papaacorn.github.io/issues"
+  },
+  "homepage": "https://github.com/PapaAcorn/papaacorn.github.io#readme",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^3.1.0",
+    "expo": "^56.0.4",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-native": "^0.85.3",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.15",
+    "typescript": "^6.0.3"
+  },
+  "private": true
+}
