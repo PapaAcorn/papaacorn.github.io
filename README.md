@@ -1,22 +1,24 @@
 # Metric Sense
 
-An offline-first React Native learning app for Android, iPhone, and iPad that builds quick intuition between metric and imperial measurements.
+An offline-first learning app that helps people switching from imperial to metric build quick, intuitive equivalencies — starting with everyday **environmental temperatures** (-15°F through 110°F).
 
-The first module is a temperature trainer for everyday environmental temperatures from freezing through about 100F. It starts with anchor points, adds more temperatures as the user learns, and keeps missed prompts in heavier rotation.
+## iOS (Swift) — recommended
 
-## Mobile targets
+The native iPhone app lives in [`MetricSense/`](MetricSense/README.md).
 
-Metric Sense is configured as a mobile app for:
+- SwiftUI, iOS 17+
+- Vertical thermometer slider for Celsius → Fahrenheit
+- Multiple choice for Fahrenheit → Celsius
+- Five-card rounds, 3-in-a-row mastery, spaced review of misses
+- Placeholder quick tips between rounds
 
-- Android phones and tablets via package `com.papaacorn.metricsense`
-- iPhone via bundle identifier `com.papaacorn.metricsense`
-- iPad, with tablet support enabled
+Open `MetricSense/MetricSense.xcodeproj` in Xcode on a Mac to build and run.
 
-## Run locally
+## React Native prototype (legacy)
+
+The repository root still contains an earlier Expo/React Native prototype (`App.tsx`). New feature work targets the Swift iOS app in `MetricSense/`.
 
 ```sh
 npm install
 npm start
 ```
-
-Use `npm run android` or `npm run ios` to open the app in an emulator, simulator, or connected device. The app is built with Expo and stores practice progress locally on the device.
