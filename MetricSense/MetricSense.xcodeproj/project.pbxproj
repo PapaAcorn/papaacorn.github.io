@@ -1,0 +1,318 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		365B3566D5394D318EC15121 /* TemperatureGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7E2BC873E8D4251BA71F920 /* TemperatureGameView.swift */; };
+		3E0C1509CF934F7280A5D085 /* MetricSenseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A7436A398C4F4EA054281A /* MetricSenseApp.swift */; };
+		4F9404190A4E4AA083EC1D76 /* TemperatureGameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6925C89735844828DA79FBE /* TemperatureGameViewModel.swift */; };
+		576ADF99353C46BCBB391E02 /* MultipleChoiceQuestionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2954AAF36FE400BB4E25F09 /* MultipleChoiceQuestionView.swift */; };
+		61CCC5FB7F05442FA9BCD86D /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87795145722E477888E3A932 /* GameEngine.swift */; };
+		76D0D3EF883942EBA5F9C26E /* TemperatureCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF42E42AC2C24A559744818B /* TemperatureCard.swift */; };
+		93017B376980436DA4548E6A /* ThermometerSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5DB3AE7E33473E9CA4C1F2 /* ThermometerSliderView.swift */; };
+		1B8A6AD95BF243D7B5DB5ED1 /* ProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4E25C9EC204047883A5434 /* ProgressStore.swift */; };
+		DB92F70AC4DC40738E80A63B /* TipInterstitialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136BCF3A03D34D9FBE3267B3 /* TipInterstitialView.swift */; };
+		E20BE617F2BA499EBD049A3A /* QuestionProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 915A17A22F004936AA6F3302 /* QuestionProgress.swift */; };
+		F3FAFD57C0004C6A8B3DBEEF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5363A611B3A9433BB0232E92 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		136BCF3A03D34D9FBE3267B3 /* TipInterstitialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipInterstitialView.swift; sourceTree = "<group>"; };
+		5363A611B3A9433BB0232E92 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		87795145722E477888E3A932 /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
+		915A17A22F004936AA6F3302 /* QuestionProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionProgress.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6478990ABCDEF /* MetricSense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetricSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD5DB3AE7E33473E9CA4C1F2 /* ThermometerSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThermometerSliderView.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5A6478990ABCDE0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D7E2BC873E8D4251BA71F920 /* TemperatureGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureGameView.swift; sourceTree = "<group>"; };
+		DE4E25C9EC204047883A5434 /* ProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressStore.swift; sourceTree = "<group>"; };
+		E6925C89735844828DA79FBE /* TemperatureGameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureGameViewModel.swift; sourceTree = "<group>"; };
+		EF42E42AC2C24A559744818B /* TemperatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureCard.swift; sourceTree = "<group>"; };
+		F2954AAF36FE400BB4E25F09 /* MultipleChoiceQuestionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultipleChoiceQuestionView.swift; sourceTree = "<group>"; };
+		F2A7436A398C4F4EA054281A /* MetricSenseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricSenseApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C1D2E3F4A5B6478990ABCDEF1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		12B429C2D982456BA978A7C4 /* MetricSense */ = {
+			isa = PBXGroup;
+			children = (
+				F2A7436A398C4F4EA054281A /* MetricSenseApp.swift */,
+				12B429C2D982456BA978A7C5 /* Models */,
+				12B429C2D982456BA978A7C6 /* Services */,
+				12B429C2D982456BA978A7C7 /* ViewModels */,
+				12B429C2D982456BA978A7C8 /* Views */,
+				5363A611B3A9433BB0232E92 /* Assets.xcassets */,
+				B1C2D3E4F5A6478990ABCDE0 /* Info.plist */,
+			);
+			path = MetricSense;
+			sourceTree = "<group>";
+		};
+		12B429C2D982456BA978A7C5 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				EF42E42AC2C24A559744818B /* TemperatureCard.swift */,
+				915A17A22F004936AA6F3302 /* QuestionProgress.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		12B429C2D982456BA978A7C6 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				DE4E25C9EC204047883A5434 /* ProgressStore.swift */,
+				87795145722E477888E3A932 /* GameEngine.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		12B429C2D982456BA978A7C7 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				E6925C89735844828DA79FBE /* TemperatureGameViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		12B429C2D982456BA978A7C8 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				D7E2BC873E8D4251BA71F920 /* TemperatureGameView.swift */,
+				AD5DB3AE7E33473E9CA4C1F2 /* ThermometerSliderView.swift */,
+				F2954AAF36FE400BB4E25F09 /* MultipleChoiceQuestionView.swift */,
+				136BCF3A03D34D9FBE3267B3 /* TipInterstitialView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		12B429C2D982456BA978A7C9 = {
+			isa = PBXGroup;
+			children = (
+				12B429C2D982456BA978A7C4 /* MetricSense */,
+				12B429C2D982456BA978A7CA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		12B429C2D982456BA978A7CA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F6478990ABCDEF /* MetricSense.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1B0AC866C3FE4D3FAF77FA9D /* MetricSense */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 12B429C2D982456BA978A7CB /* Build configuration list for PBXNativeTarget "MetricSense" */;
+			buildPhases = (
+				12B429C2D982456BA978A7CC /* Sources */,
+				C1D2E3F4A5B6478990ABCDEF1 /* Frameworks */,
+				12B429C2D982456BA978A7CD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MetricSense;
+			productName = MetricSense;
+			productReference = A1B2C3D4E5F6478990ABCDEF /* MetricSense.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		12B429C2D982456BA978A7C3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					1B0AC866C3FE4D3FAF77FA9D = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 12B429C2D982456BA978A7CE /* Build configuration list for PBXProject "MetricSense" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 12B429C2D982456BA978A7C9;
+			productRefGroup = 12B429C2D982456BA978A7CA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1B0AC866C3FE4D3FAF77FA9D /* MetricSense */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		12B429C2D982456BA978A7CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F3FAFD57C0004C6A8B3DBEEF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		12B429C2D982456BA978A7CC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3E0C1509CF934F7280A5D085 /* MetricSenseApp.swift in Sources */,
+				76D0D3EF883942EBA5F9C26E /* TemperatureCard.swift in Sources */,
+				E20BE617F2BA499EBD049A3A /* QuestionProgress.swift in Sources */,
+				1B8A6AD95BF243D7B5DB5ED1 /* ProgressStore.swift in Sources */,
+				61CCC5FB7F05442FA9BCD86D /* GameEngine.swift in Sources */,
+				4F9404190A4E4AA083EC1D76 /* TemperatureGameViewModel.swift in Sources */,
+				365B3566D5394D318EC15121 /* TemperatureGameView.swift in Sources */,
+				93017B376980436DA4548E6A /* ThermometerSliderView.swift in Sources */,
+				576ADF99353C46BCBB391E02 /* MultipleChoiceQuestionView.swift in Sources */,
+				DB92F70AC4DC40738E80A63B /* TipInterstitialView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		12B429C2D982456BA978A7CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		12B429C2D982456BA978A7D0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		12B429C2D982456BA978A7D1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MetricSense/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.papaacorn.metricsense;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		12B429C2D982456BA978A7D2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MetricSense/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.papaacorn.metricsense;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		12B429C2D982456BA978A7CB /* Build configuration list for PBXNativeTarget "MetricSense" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				12B429C2D982456BA978A7D1 /* Debug */,
+				12B429C2D982456BA978A7D2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		12B429C2D982456BA978A7CE /* Build configuration list for PBXProject "MetricSense" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				12B429C2D982456BA978A7CF /* Debug */,
+				12B429C2D982456BA978A7D0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 12B429C2D982456BA978A7C3 /* Project object */;
+}
