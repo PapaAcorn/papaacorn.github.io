@@ -34,7 +34,10 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
-                        SettingsView()
+                        SettingsView(
+                            unlockStore: unlockStore,
+                            temperatureProgress: temperatureProgress
+                        )
                     } label: {
                         Image(systemName: "gearshape.fill")
                             .font(.body.weight(.semibold))
@@ -46,7 +49,10 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     NavigationLink {
-                        SettingsView()
+                        SettingsView(
+                            unlockStore: unlockStore,
+                            temperatureProgress: temperatureProgress
+                        )
                     } label: {
                         Image(systemName: "gearshape.fill")
                             .foregroundStyle(palette.textSecondary)
@@ -58,21 +64,13 @@ struct HomeView: View {
     }
 
     private var heroSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Metricize Me")
-                .font(.system(size: 38, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [palette.textPrimary, palette.heroHighlight],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            Text("Develop an intuitive feel for metric units — through repetition, not calculators.")
-                .font(.body)
-                .foregroundStyle(palette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 0) {
+            Text("Metricize ")
+                .font(AppFont.sora(size: 38, weight: .bold))
+                .foregroundStyle(palette.textPrimary)
+            Text("Me")
+                .font(AppFont.sora(size: 42, weight: .heavy))
+                .foregroundStyle(MetricTheme.warmEmber)
         }
         .padding(.top, 12)
     }
@@ -132,7 +130,6 @@ struct HomeView: View {
 
         case .comingSoon:
             ModuleTileView(tile: tile, isLocked: false, progressCaption: nil)
-                .opacity(0.72)
                 .allowsHitTesting(false)
         }
     }
@@ -261,35 +258,25 @@ private struct ModuleTileView: View {
         return false
     }
 
+    private var subtitle: String? {
+        tile.subtitle
+    }
+
     var body: some View {
         VStack(spacing: 10) {
-            ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(tileBackground)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .strokeBorder(tileBorder, lineWidth: 1)
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    GeometryReader { geometry in
+                        let dimension = min(geometry.size.width, geometry.size.height)
+                        ModuleTileIconView(kind: ModuleTileIconKind(tile: tile), size: dimension)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
                     }
-                    .overlay {
-                        ModuleTileIconView(kind: ModuleTileIconKind(tile: tile), size: 44)
-                    }
-                    .aspectRatio(1, contentMode: .fit)
-
-                if isLocked {
-                    Image(systemName: "lock.fill")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(palette.textTertiary)
-                        .padding(8)
-                } else if isComingSoon {
-                    Text("Soon")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(palette.textTertiary)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(palette.chipFill))
-                        .padding(8)
                 }
-            }
+                .overlay(alignment: .topTrailing) {
+                    badgeOverlay
+                }
+                .opacity(isLocked ? 0.45 : isComingSoon ? 0.72 : 1)
 
             VStack(spacing: 3) {
                 Text(tile.title)
@@ -304,35 +291,35 @@ private struct ModuleTileView: View {
                         .font(.caption2)
                         .foregroundStyle(palette.textTertiary)
                         .multilineTextAlignment(.center)
+                } else if let subtitle {
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(palette.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
     }
 
-    private var tileBackground: AnyShapeStyle {
-        switch tile {
-        case .insideAndOut:
-            AnyShapeStyle(
-                LinearGradient(
-                    colors: [
-                        MetricTheme.coolFrost.opacity(isLocked ? 0.08 : 0.18),
-                        MetricTheme.warmEmber.opacity(isLocked ? 0.06 : 0.14),
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        case .comingSoon:
-            AnyShapeStyle(palette.cardFillMuted)
-        }
-    }
-
-    private var tileBorder: AnyShapeStyle {
-        switch tile {
-        case .insideAndOut:
-            AnyShapeStyle(palette.glassStroke)
-        case .comingSoon:
-            AnyShapeStyle(palette.chipStroke)
+    @ViewBuilder
+    private var badgeOverlay: some View {
+        if isLocked {
+            Image(systemName: "lock.fill")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(palette.textTertiary)
+                .padding(.top, 6)
+                .padding(.trailing, 2)
+        } else if isComingSoon {
+            Text("Soon")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(palette.textTertiary)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(palette.chipFill))
+                .padding(.top, 6)
+                .padding(.trailing, 2)
         }
     }
 }

@@ -241,6 +241,7 @@ struct TemperaturePromptView: View {
     let unit: String
     var caption: String?
     var hint: String?
+    var compact: Bool = false
 
     @Environment(\.metricPalette) private var palette
 
@@ -250,19 +251,20 @@ struct TemperaturePromptView: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: compact ? 6 : 10) {
             if let caption {
                 Text("Hint: \(caption)")
-                    .font(.title3.weight(.medium))
+                    .font(compact ? .subheadline.weight(.medium) : .title3.weight(.medium))
                     .foregroundStyle(palette.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
                     .padding(.horizontal, 8)
+                    .lineLimit(compact ? 3 : nil)
             }
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(value)")
-                    .font(.system(size: 72, weight: .thin, design: .rounded))
+                    .font(.system(size: compact ? 48 : 72, weight: .thin, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [paletteColors.glow, paletteColors.primary],
@@ -271,17 +273,17 @@ struct TemperaturePromptView: View {
                         )
                     )
                     .contentTransition(.numericText())
-                    .shadow(color: paletteColors.glow.opacity(0.35), radius: 16, y: 4)
+                    .shadow(color: paletteColors.glow.opacity(0.35), radius: compact ? 10 : 16, y: 4)
 
                 Text(unit)
-                    .font(.system(size: 28, weight: .light, design: .rounded))
+                    .font(.system(size: compact ? 20 : 28, weight: .light, design: .rounded))
                     .foregroundStyle(palette.textSecondary)
-                    .offset(y: -8)
+                    .offset(y: compact ? -4 : -8)
             }
 
             if let hint {
                 Text(hint)
-                    .font(.body.weight(.medium))
+                    .font(compact ? .caption.weight(.medium) : .body.weight(.medium))
                     .foregroundStyle(palette.textTertiary)
             }
         }
@@ -324,6 +326,7 @@ struct LearningStreakView: View {
 struct PrimaryActionButton: View {
     let title: String
     var isEnabled: Bool = true
+    var compact: Bool = false
     let action: () -> Void
 
     @Environment(\.metricPalette) private var palette
@@ -331,14 +334,14 @@ struct PrimaryActionButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.headline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .font(compact ? .subheadline.weight(.semibold) : .headline.weight(.semibold))
+                .frame(maxWidth: compact ? 200 : .infinity)
+                .padding(.vertical, compact ? 10 : 16)
                 .foregroundStyle(.white)
                 .background {
                     Capsule(style: .continuous)
                         .fill(isEnabled ? AnyShapeStyle(MetricTheme.primaryButton) : AnyShapeStyle(palette.chipFill))
-                        .shadow(color: MetricTheme.warmEmber.opacity(isEnabled ? 0.45 : 0), radius: 16, y: 6)
+                        .shadow(color: MetricTheme.warmEmber.opacity(isEnabled ? 0.45 : 0), radius: compact ? 10 : 16, y: compact ? 4 : 6)
                 }
         }
         .buttonStyle(.plain)
@@ -351,6 +354,7 @@ struct RoundProgressHeader: View {
     let roundLabel: String
     let learned: Int
     let total: Int
+    var compact: Bool = false
 
     @Environment(\.metricPalette) private var palette
 
@@ -360,15 +364,43 @@ struct RoundProgressHeader: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        if compact {
+            compactBody
+        } else {
+            standardBody
+        }
+    }
+
+    private var compactBody: some View {
+        HStack(spacing: 12) {
+            Text(roundLabel)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(palette.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            progressBar
+                .frame(maxWidth: 140)
+
+            Text("\(learned)/\(total)")
+                .font(.caption2.weight(.bold).monospacedDigit())
+                .foregroundStyle(palette.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(palette.ink.opacity(0.35))
+    }
+
+    private var standardBody: some View {
+        VStack(spacing: 8) {
             HStack(alignment: .center) {
                 Text(roundLabel)
-                    .font(.headline.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(palette.textPrimary)
 
                 Spacer()
 
-                VStack(spacing: 8) {
+                VStack(spacing: 4) {
                     Text("Learned")
                         .font(.caption2.weight(.semibold))
                         .tracking(0.6)
@@ -376,7 +408,7 @@ struct RoundProgressHeader: View {
 
                     ZStack {
                         Circle()
-                            .stroke(palette.progressTrack, lineWidth: 4)
+                            .stroke(palette.progressTrack, lineWidth: 3)
                         Circle()
                             .trim(from: 0, to: progress)
                             .stroke(
@@ -384,7 +416,7 @@ struct RoundProgressHeader: View {
                                     colors: [MetricTheme.warmEmber, MetricTheme.warmGlow, MetricTheme.warmEmber],
                                     center: .center
                                 ),
-                                style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
                             )
                             .rotationEffect(.degrees(-90))
                             .animation(.spring(response: 0.5), value: progress)
@@ -393,32 +425,36 @@ struct RoundProgressHeader: View {
                             .font(.caption2.weight(.bold).monospacedDigit())
                             .foregroundStyle(palette.textSecondary)
                     }
-                    .frame(width: 52, height: 52)
+                    .frame(width: 40, height: 40)
                 }
             }
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(palette.progressTrack)
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [MetricTheme.coolFrost, MetricTheme.warmEmber],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: max(8, geo.size.width * progress))
-                        .animation(.spring(response: 0.5), value: progress)
-                }
-            }
-            .frame(height: 4)
+            progressBar
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.vertical, 10)
         .glassCard(cornerRadius: 0, padding: 0)
         .background(palette.ink.opacity(0.35))
+    }
+
+    private var progressBar: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(palette.progressTrack)
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [MetricTheme.coolFrost, MetricTheme.warmEmber],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: max(8, geo.size.width * progress))
+                    .animation(.spring(response: 0.5), value: progress)
+            }
+        }
+        .frame(height: compact ? 3 : 4)
     }
 }
 

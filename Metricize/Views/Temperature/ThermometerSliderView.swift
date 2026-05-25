@@ -11,6 +11,7 @@ struct ThermometerSliderView: View {
     @Binding var selectedFahrenheit: Double
     let isEnabled: Bool
     var layout: ChallengeLayout = .stacked
+    var compact: Bool = false
 
     @Environment(\.metricPalette) private var palette
 
@@ -49,7 +50,14 @@ struct ThermometerSliderView: View {
             thermometerTrack
             fahrenheitReadout
         }
-        .frame(maxHeight: layout == .sideBySide ? 320 : 280)
+        .frame(maxHeight: sliderMaxHeight)
+    }
+
+    private var sliderMaxHeight: CGFloat {
+        if layout == .sideBySide {
+            return compact ? 180 : 240
+        }
+        return compact ? 220 : 280
     }
 
     private var thermometerTrack: some View {

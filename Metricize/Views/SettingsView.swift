@@ -9,11 +9,17 @@ struct SettingsView: View {
     @Environment(AppSettingsStore.self) private var settings
     @Environment(\.metricPalette) private var palette
 
+    let unlockStore: ModuleUnlockStore
+    let temperatureProgress: TemperatureProgressStore
+
+    @State private var showResetAllConfirmation = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 appearanceSection
                 learningSection
+                progressSection
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
@@ -24,6 +30,18 @@ struct SettingsView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         #endif
         .metricScreenBackground()
+        .confirmationDialog(
+            "Reset all progress?",
+            isPresented: $showResetAllConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reset All Progress", role: .destructive) {
+                unlockStore.resetAllProgress(temperatureStore: temperatureProgress)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This clears learning progress and requires viewing each module's introductory pages again before continuing.")
+        }
     }
 
     private var appearanceSection: some View {
@@ -129,6 +147,36 @@ struct SettingsView: View {
         }
     }
 
+    private var progressSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionLabel("Progress")
+
+            Button {
+                showResetAllConfirmation = true
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Reset All Progress")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color(red: 1.0, green: 0.45, blue: 0.38))
+                        Text("Clears all module progress and intro completion.")
+                            .font(.caption)
+                            .foregroundStyle(palette.textSecondary)
+                            .multilineTextAlignment(.leading)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "arrow.counterclockwise")
+                        .foregroundStyle(Color(red: 1.0, green: 0.45, blue: 0.38))
+                }
+                .padding(20)
+                .background(settingsCardBackground)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     private var settingsCardBackground: some View {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
             .fill(palette.cardFill)
@@ -148,7 +196,9 @@ struct SettingsView: View {
 
 #Preview {
     NavigationStack {
-        SettingsView()
-            .environment(AppSettingsStore())
+        SettingsView(
+            unlockStore: ModuleUnlockStore(),
+            temperatureProgress: TemperatureProgressStore()
+        )
     }
 }

@@ -10,11 +10,21 @@ struct TemperatureGameView: View {
     @State private var sliderValueFahrenheit: Double = TemperatureGameConstants.defaultSliderFahrenheit
     @State private var sliderValueCelsius: Double = TemperatureGameConstants.defaultSliderCelsius
     @State private var multipleChoiceOptions: [Int] = []
+    @State private var showResetConfirmation = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.metricPalette) private var palette
 
-    init(progressStore: TemperatureProgressStore = TemperatureProgressStore()) {
+    var onResetModule: (() -> Void)?
+    var onReviewBasics: (() -> Void)?
+
+    init(
+        progressStore: TemperatureProgressStore = TemperatureProgressStore(),
+        onResetModule: (() -> Void)? = nil,
+        onReviewBasics: (() -> Void)? = nil
+    ) {
         _viewModel = State(initialValue: TemperatureGameViewModel(progressStore: progressStore))
+        self.onResetModule = onResetModule
+        self.onReviewBasics = onReviewBasics
     }
 
     private var activeCelsius: Int? {
@@ -33,39 +43,90 @@ struct TemperatureGameView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if !isFullScreenPhase {
-                RoundProgressHeader(
-                    roundLabel: roundLabel,
-                    learned: progressStore.learnedCountInCurrentSubRound(),
-                    total: progressStore.totalCountInCurrentSubRound()
-                )
-            }
+        GeometryReader { geometry in
+            let isLandscape = ChallengeLayout.current(size: geometry.size) == .sideBySide
 
-            Group {
-                switch viewModel.phase {
-                case .playing(let card):
-                    challengeView(for: card)
-                case .showingTip(let roundIndex, let tips):
-                    RoundTipView(
-                        roundTitle: "Round \(roundIndex + 1)",
-                        tips: tips,
-                        onContinue: viewModel.dismissTipAndContinue
+            VStack(spacing: 0) {
+                if !isFullScreenPhase {
+                    RoundProgressHeader(
+                        roundLabel: roundLabel,
+                        learned: progressStore.learnedCountInCurrentSubRound(),
+                        total: progressStore.totalCountInCurrentSubRound(),
+                        compact: isLandscape
                     )
-                case .roundComplete:
-                    roundCompletePlaceholder
-                case .moduleComplete:
-                    moduleCompleteView
+
+                    if !isLandscape {
+                        Spacer()
+                            .frame(height: 20)
+                    }
                 }
+
+                Group {
+                    switch viewModel.phase {
+                    case .playing(let card):
+                        challengeView(for: card, isLandscape: isLandscape)
+                    case .showingTip(let roundIndex, let tips):
+                        RoundTipView(
+                            roundTitle: "Round \(roundIndex + 1)",
+                            tips: tips,
+                            onContinue: viewModel.dismissTipAndContinue
+                        )
+                    case .roundComplete:
+                        roundCompletePlaceholder
+                    case .moduleComplete:
+                        moduleCompleteView
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .metricScreenBackground(celsius: activeCelsius)
         #if os(iOS)
         .navigationTitle("Inside & Out")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        #else
+        .navigationTitle("Inside & Out")
         #endif
+        .toolbar {
+            if onReviewBasics != nil {
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        onReviewBasics?()
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(palette.textSecondary)
+                    }
+                    .accessibilityLabel("Review basics")
+                }
+            }
+
+            ToolbarItem(placement: .automatic) {
+                Button("Reset") {
+                    showResetConfirmation = true
+                }
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(palette.textSecondary)
+            }
+        }
+        .confirmationDialog(
+            "Reset all progress for Inside & Out?",
+            isPresented: $showResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reset Progress", role: .destructive) {
+                if let onResetModule {
+                    onResetModule()
+                } else {
+                    viewModel.resetModule()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This clears your learning progress and returns you to the introductory screens.")
+        }
         .overlay {
             feedbackBanner
         }
@@ -96,33 +157,42 @@ struct TemperatureGameView: View {
     }
 
     @ViewBuilder
-    private func challengeView(for card: TemperatureCard) -> some View {
+    private func challengeView(for card: TemperatureCard, isLandscape: Bool) -> some View {
         GeometryReader { geometry in
             let layout = ChallengeLayout.current(size: geometry.size)
 
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    if layout == .stacked {
+                        Spacer(minLength: 0)
+                    }
 
-                VStack(spacing: 12) {
-                    switch card.challengeType {
-                    case .thermometerSlider:
-                        sliderChallenge(for: card, layout: layout)
-                    case .multipleChoice:
-                        MultipleChoiceChallengeView(
-                            card: card,
-                            choices: multipleChoiceOptions,
-                            isEnabled: !viewModel.isSubmitting,
-                            onSelect: { guess in
-                                viewModel.submitMultipleChoice(guess: guess, for: card)
-                            },
-                            layout: layout
-                        )
-                        .id(card.id)
-                        .padding(.horizontal, layout == .sideBySide ? 12 : 20)
+                    VStack(spacing: layout == .sideBySide ? 8 : 12) {
+                        switch card.challengeType {
+                        case .thermometerSlider:
+                            sliderChallenge(for: card, layout: layout, compact: isLandscape)
+                        case .multipleChoice:
+                            MultipleChoiceChallengeView(
+                                card: card,
+                                choices: multipleChoiceOptions,
+                                isEnabled: !viewModel.isSubmitting,
+                                onSelect: { guess in
+                                    viewModel.submitMultipleChoice(guess: guess, for: card)
+                                },
+                                layout: layout,
+                                compact: isLandscape
+                            )
+                            .id(card.id)
+                            .padding(.horizontal, layout == .sideBySide ? 12 : 20)
+                        }
+                    }
+                    .padding(.vertical, layout == .sideBySide ? 8 : 0)
+
+                    if layout == .stacked {
+                        Spacer(minLength: 0)
                     }
                 }
-
-                Spacer(minLength: 0)
+                .frame(minHeight: layout == .sideBySide ? geometry.size.height : nil)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
@@ -139,25 +209,26 @@ struct TemperatureGameView: View {
     }
 
     @ViewBuilder
-    private func sliderChallenge(for card: TemperatureCard, layout: ChallengeLayout) -> some View {
+    private func sliderChallenge(for card: TemperatureCard, layout: ChallengeLayout, compact: Bool) -> some View {
         Group {
             switch layout {
             case .stacked:
-                stackedSliderChallenge(for: card, layout: layout)
+                stackedSliderChallenge(for: card, layout: layout, compact: compact)
             case .sideBySide:
-                sideBySideSliderChallenge(for: card, layout: layout)
+                sideBySideSliderChallenge(for: card, layout: layout, compact: compact)
             }
         }
     }
 
     @ViewBuilder
-    private func stackedSliderChallenge(for card: TemperatureCard, layout: ChallengeLayout) -> some View {
-        VStack(spacing: 20) {
-            sliderView(for: card, layout: layout)
+    private func stackedSliderChallenge(for card: TemperatureCard, layout: ChallengeLayout, compact: Bool) -> some View {
+        VStack(spacing: compact ? 12 : 20) {
+            sliderView(for: card, layout: layout, compact: compact)
 
             PrimaryActionButton(
                 title: "Check",
-                isEnabled: !viewModel.isSubmitting
+                isEnabled: !viewModel.isSubmitting,
+                compact: compact
             ) {
                 submitSliderAnswer(for: card)
             }
@@ -166,48 +237,51 @@ struct TemperatureGameView: View {
     }
 
     @ViewBuilder
-    private func sideBySideSliderChallenge(for card: TemperatureCard, layout: ChallengeLayout) -> some View {
-        HStack(alignment: .center, spacing: 24) {
-            sliderPrompt(for: card)
+    private func sideBySideSliderChallenge(for card: TemperatureCard, layout: ChallengeLayout, compact: Bool) -> some View {
+        HStack(alignment: .center, spacing: compact ? 16 : 24) {
+            sliderPrompt(for: card, compact: compact)
                 .frame(maxWidth: .infinity)
 
-            VStack(spacing: 20) {
-                sliderView(for: card, layout: .sideBySide)
+            VStack(spacing: compact ? 10 : 20) {
+                sliderView(for: card, layout: .sideBySide, compact: compact)
 
                 PrimaryActionButton(
                     title: "Check",
-                    isEnabled: !viewModel.isSubmitting
+                    isEnabled: !viewModel.isSubmitting,
+                    compact: true
                 ) {
                     submitSliderAnswer(for: card)
                 }
             }
             .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, compact ? 12 : 20)
     }
 
     @ViewBuilder
-    private func sliderPrompt(for card: TemperatureCard) -> some View {
+    private func sliderPrompt(for card: TemperatureCard, compact: Bool = false) -> some View {
         switch card.direction {
         case .celsiusToFahrenheit:
             TemperaturePromptView(
                 value: card.celsius,
                 unit: "°C",
                 caption: card.label,
-                hint: "Drag the marker on the Fahrenheit scale"
+                hint: "Drag the marker on the Fahrenheit scale",
+                compact: compact
             )
         case .fahrenheitToCelsius:
             TemperaturePromptView(
                 value: card.promptValue,
                 unit: "°F",
                 caption: card.label,
-                hint: "Drag the marker on the Celsius scale"
+                hint: "Drag the marker on the Celsius scale",
+                compact: compact
             )
         }
     }
 
     @ViewBuilder
-    private func sliderView(for card: TemperatureCard, layout: ChallengeLayout) -> some View {
+    private func sliderView(for card: TemperatureCard, layout: ChallengeLayout, compact: Bool) -> some View {
         switch card.direction {
         case .celsiusToFahrenheit:
             ThermometerSliderView(
@@ -215,7 +289,8 @@ struct TemperatureGameView: View {
                 label: card.label,
                 selectedFahrenheit: $sliderValueFahrenheit,
                 isEnabled: !viewModel.isSubmitting,
-                layout: layout
+                layout: layout,
+                compact: compact
             )
             .id(card.id)
         case .fahrenheitToCelsius:
@@ -224,7 +299,8 @@ struct TemperatureGameView: View {
                 label: card.label,
                 selectedCelsius: $sliderValueCelsius,
                 isEnabled: !viewModel.isSubmitting,
-                layout: layout
+                layout: layout,
+                compact: compact
             )
             .id(card.id)
         }

@@ -33,6 +33,22 @@ final class ModuleUnlockStore {
         save()
     }
 
+    func clearCompletion(_ module: AppModule) {
+        completedModules.remove(module)
+        save()
+    }
+
+    func clearInsideAndOutIntro() {
+        clearCompletion(AppModule.insideAndOutIntroCompletion)
+    }
+
+    /// Clears all module completion flags and learning progress. User must re-read intro pages.
+    func resetAllProgress(temperatureStore: TemperatureProgressStore) {
+        completedModules = []
+        temperatureStore.resetProgress()
+        save()
+    }
+
     func resetAll() {
         completedModules = []
         save()

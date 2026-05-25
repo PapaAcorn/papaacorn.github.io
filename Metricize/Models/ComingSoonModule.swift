@@ -53,6 +53,13 @@ enum ModuleTileItem: Identifiable {
         }
     }
 
+    var subtitle: String? {
+        switch self {
+        case .insideAndOut: AppModule.insideAndOut.subtitle
+        case .comingSoon(let module): module.subtitle
+        }
+    }
+
     static var homeGrid: [ModuleTileItem] {
         [.insideAndOut] + ComingSoonModule.allCases.map { .comingSoon($0) }
     }

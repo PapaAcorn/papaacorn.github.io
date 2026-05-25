@@ -27,13 +27,41 @@ enum ModuleTileIconKind {
             }
         }
     }
+
+    fileprivate var tilePlacement: ModuleTileIconPlacement {
+        switch self {
+        case .kitchen:
+            ModuleTileIconPlacement(scale: 0.74, yOffset: 0.14)
+        case .hereToThere:
+            ModuleTileIconPlacement(scale: 0.8, yOffset: 0.1)
+        case .calculator:
+            ModuleTileIconPlacement(scale: 0.76, yOffset: 0.1)
+        case .gym:
+            ModuleTileIconPlacement(scale: 0.86, yOffset: 0.04)
+        case .insideAndOut, .onTheRoad:
+            ModuleTileIconPlacement(scale: 1, yOffset: 0)
+        }
+    }
+}
+
+private struct ModuleTileIconPlacement {
+    let scale: CGFloat
+    let yOffset: CGFloat
 }
 
 struct ModuleTileIconView: View {
     let kind: ModuleTileIconKind
-    var size: CGFloat = 44
+    var size: CGFloat = 100
 
     var body: some View {
+        icon
+            .scaleEffect(kind.tilePlacement.scale)
+            .offset(y: size * kind.tilePlacement.yOffset)
+            .frame(width: size, height: size)
+    }
+
+    @ViewBuilder
+    private var icon: some View {
         switch kind {
         case .insideAndOut:
             InsideAndOutIcon(size: size)
@@ -42,7 +70,7 @@ struct ModuleTileIconView: View {
         case .gym:
             DumbbellIcon(size: size)
         case .onTheRoad:
-            SpeedometerIcon(size: size)
+            CarIcon(size: size)
         case .hereToThere:
             RulerIcon(size: size)
         case .calculator:
@@ -57,24 +85,16 @@ private struct InsideAndOutIcon: View {
     let size: CGFloat
 
     var body: some View {
-        ZStack {
-            HStack(spacing: 0) {
-                Image(systemName: "snowflake")
-                    .font(.system(size: size * 0.42, weight: .light))
-                    .foregroundStyle(MetricTheme.coolFrost)
-                    .frame(width: size * 0.5, height: size)
-                    .clipped()
+        HStack(spacing: 0) {
+            Image(systemName: "snowflake")
+                .font(.system(size: size * 0.34, weight: .light))
+                .foregroundStyle(MetricTheme.coolDeep)
+                .frame(width: size * 0.5, height: size)
 
-                Image(systemName: "sun.max.fill")
-                    .font(.system(size: size * 0.38, weight: .light))
-                    .foregroundStyle(MetricTheme.warmGlow)
-                    .frame(width: size * 0.5, height: size)
-                    .clipped()
-            }
-
-            Rectangle()
-                .fill(Color.white.opacity(0.2))
-                .frame(width: 1, height: size * 0.7)
+            Image(systemName: "sun.max.fill")
+                .font(.system(size: size * 0.32, weight: .light))
+                .foregroundStyle(MetricTheme.warmEmber)
+                .frame(width: size * 0.5, height: size)
         }
         .frame(width: size, height: size)
     }
@@ -88,25 +108,50 @@ private struct KitchenCakeIcon: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             RoundedRectangle(cornerRadius: size * 0.06, style: .continuous)
-                .fill(MetricTheme.warmGlow.opacity(0.85))
-                .frame(width: size * 0.72, height: size * 0.22)
-                .offset(y: -size * 0.02)
+                .fill(MetricTheme.warmEmber)
+                .frame(width: size * 0.72, height: size * 0.2)
+                .overlay(alignment: .top) {
+                    wavyFrosting(width: size * 0.72)
+                        .offset(y: -size * 0.035)
+                }
 
             RoundedRectangle(cornerRadius: size * 0.05, style: .continuous)
-                .fill(MetricTheme.warmEmber.opacity(0.9))
-                .frame(width: size * 0.58, height: size * 0.18)
+                .fill(Color(red: 0.85, green: 0.55, blue: 0.35))
+                .frame(width: size * 0.54, height: size * 0.16)
+                .offset(y: -size * 0.17)
+                .overlay(alignment: .top) {
+                    wavyFrosting(width: size * 0.54)
+                        .offset(y: -size * 0.03)
+                }
 
-            Capsule()
+            RoundedRectangle(cornerRadius: size * 0.04, style: .continuous)
                 .fill(MetricTheme.warmGlow)
-                .frame(width: size * 0.06, height: size * 0.14)
-                .offset(y: -size * 0.28)
+                .frame(width: size * 0.34, height: size * 0.12)
+                .offset(y: -size * 0.3)
 
-            Circle()
-                .fill(MetricTheme.warmEmber)
-                .frame(width: size * 0.08, height: size * 0.08)
-                .offset(y: -size * 0.38)
+            RoundedRectangle(cornerRadius: size * 0.01, style: .continuous)
+                .fill(MetricTheme.coolDeep)
+                .frame(width: size * 0.035, height: size * 0.1)
+                .offset(y: -size * 0.4)
+
+            Ellipse()
+                .fill(
+                    LinearGradient(
+                        colors: [MetricTheme.warmGlow, MetricTheme.warmEmber],
+                        startPoint: .bottom,
+                        endPoint: .top
+                    )
+                )
+                .frame(width: size * 0.06, height: size * 0.07)
+                .offset(y: -size * 0.48)
         }
         .frame(width: size, height: size)
+    }
+
+    private func wavyFrosting(width: CGFloat) -> some View {
+        Capsule()
+            .fill(Color.white.opacity(0.85))
+            .frame(width: width, height: width * 0.1)
     }
 }
 
@@ -116,54 +161,68 @@ private struct DumbbellIcon: View {
     let size: CGFloat
 
     var body: some View {
-        HStack(spacing: size * 0.06) {
-            RoundedRectangle(cornerRadius: size * 0.04, style: .continuous)
-                .fill(MetricTheme.textSecondary.opacity(0.9))
-                .frame(width: size * 0.16, height: size * 0.44)
-
+        HStack(spacing: size * 0.04) {
+            weightPlate
             Capsule()
-                .fill(MetricTheme.textSecondary.opacity(0.75))
-                .frame(width: size * 0.36, height: size * 0.08)
-
-            RoundedRectangle(cornerRadius: size * 0.04, style: .continuous)
-                .fill(MetricTheme.textSecondary.opacity(0.9))
-                .frame(width: size * 0.16, height: size * 0.44)
+                .fill(MetricTheme.coolDeep)
+                .frame(width: size * 0.34, height: size * 0.07)
+            weightPlate
         }
         .frame(width: size, height: size)
     }
+
+    private var weightPlate: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.03, style: .continuous)
+                .fill(MetricTheme.coolDeep)
+                .frame(width: size * 0.18, height: size * 0.48)
+            RoundedRectangle(cornerRadius: size * 0.025, style: .continuous)
+                .fill(MetricTheme.warmEmber)
+                .frame(width: size * 0.12, height: size * 0.38)
+        }
+    }
 }
 
-// MARK: - Speedometer
+// MARK: - Car
 
-private struct SpeedometerIcon: View {
+private struct CarIcon: View {
     let size: CGFloat
 
     var body: some View {
         ZStack {
-            Circle()
-                .trim(from: 0.15, to: 0.85)
-                .stroke(MetricTheme.coolFrost.opacity(0.5), lineWidth: size * 0.06)
-                .rotationEffect(.degrees(90))
-                .frame(width: size * 0.72, height: size * 0.72)
+            RoundedRectangle(cornerRadius: size * 0.08, style: .continuous)
+                .fill(MetricTheme.coolDeep)
+                .frame(width: size * 0.72, height: size * 0.28)
+                .offset(y: size * 0.06)
+
+            RoundedRectangle(cornerRadius: size * 0.06, style: .continuous)
+                .fill(MetricTheme.coolFrost)
+                .frame(width: size * 0.38, height: size * 0.2)
+                .offset(x: -size * 0.04, y: -size * 0.1)
+
+            HStack(spacing: size * 0.28) {
+                wheel
+                wheel
+            }
+            .offset(y: size * 0.2)
 
             Circle()
-                .trim(from: 0.15, to: 0.55)
-                .stroke(MetricTheme.warmEmber, lineWidth: size * 0.06)
-                .rotationEffect(.degrees(90))
-                .frame(width: size * 0.72, height: size * 0.72)
-
-            Capsule()
-                .fill(MetricTheme.textPrimary.opacity(0.85))
-                .frame(width: size * 0.06, height: size * 0.28)
-                .offset(y: -size * 0.1)
-                .rotationEffect(.degrees(-35))
-
-            Circle()
-                .fill(MetricTheme.textPrimary.opacity(0.85))
-                .frame(width: size * 0.1, height: size * 0.1)
-                .offset(y: size * 0.08)
+                .fill(MetricTheme.warmGlow)
+                .frame(width: size * 0.07, height: size * 0.07)
+                .offset(x: size * 0.3, y: size * 0.04)
         }
         .frame(width: size, height: size)
+    }
+
+    private var wheel: some View {
+        Circle()
+            .fill(Color.primary.opacity(0.75))
+            .frame(width: size * 0.14, height: size * 0.14)
+            .overlay {
+                Circle()
+                    .fill(Color.primary.opacity(0.35))
+                    .frame(width: size * 0.06, height: size * 0.06)
+            }
     }
 }
 
@@ -174,21 +233,27 @@ private struct RulerIcon: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: size * 0.04, style: .continuous)
-                .fill(MetricTheme.coolFrost.opacity(0.35))
-                .frame(width: size * 0.82, height: size * 0.24)
+            RoundedRectangle(cornerRadius: size * 0.05, style: .continuous)
+                .fill(MetricTheme.warmGlow)
+                .frame(width: size * 0.76, height: size * 0.24)
+                .overlay {
+                    RoundedRectangle(cornerRadius: size * 0.05, style: .continuous)
+                        .strokeBorder(MetricTheme.warmEmber, lineWidth: size * 0.025)
+                }
+                .shadow(color: MetricTheme.warmEmber.opacity(0.25), radius: size * 0.04)
 
-            HStack(spacing: size * 0.07) {
+            HStack(spacing: size * 0.06) {
                 ForEach(0..<5, id: \.self) { index in
                     Rectangle()
-                        .fill(MetricTheme.coolDeep.opacity(0.85))
+                        .fill(MetricTheme.coolDeep)
                         .frame(
-                            width: size * 0.025,
+                            width: size * 0.026,
                             height: index.isMultiple(of: 2) ? size * 0.14 : size * 0.08
                         )
                 }
             }
         }
+        .rotationEffect(.degrees(-25))
         .frame(width: size, height: size)
     }
 }
@@ -198,24 +263,42 @@ private struct RulerIcon: View {
 private struct CalculatorIcon: View {
     let size: CGFloat
 
-    var body: some View {
-        VStack(spacing: size * 0.05) {
-            RoundedRectangle(cornerRadius: size * 0.05, style: .continuous)
-                .fill(MetricTheme.coolFrost.opacity(0.35))
-                .frame(width: size * 0.62, height: size * 0.14)
+    private var bodyWidth: CGFloat { size * 0.52 }
+    private var bodyHeight: CGFloat { size * 0.72 }
 
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(size * 0.12), spacing: size * 0.05), count: 3), spacing: size * 0.05) {
-                ForEach(0..<6, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: size * 0.025, style: .continuous)
-                        .fill(MetricTheme.textSecondary.opacity(0.55))
-                        .frame(width: size * 0.12, height: size * 0.1)
+    var body: some View {
+        VStack(spacing: size * 0.045) {
+            RoundedRectangle(cornerRadius: size * 0.025, style: .continuous)
+                .fill(MetricTheme.coolFrost)
+                .frame(width: bodyWidth * 0.88, height: bodyHeight * 0.18)
+                .overlay(alignment: .trailing) {
+                    Text("123")
+                        .font(.system(size: size * 0.065, weight: .bold, design: .rounded))
+                        .foregroundStyle(MetricTheme.coolDeep)
+                        .padding(.trailing, size * 0.04)
+                }
+
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.fixed(bodyWidth * 0.24), spacing: size * 0.035), count: 3),
+                spacing: size * 0.035
+            ) {
+                ForEach(0..<6, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: size * 0.02, style: .continuous)
+                        .fill(index == 5 ? MetricTheme.warmEmber : MetricTheme.coolDeep.opacity(0.85))
+                        .frame(width: bodyWidth * 0.24, height: bodyHeight * 0.12)
                 }
             }
         }
-        .padding(size * 0.1)
+        .padding(.horizontal, size * 0.06)
+        .padding(.vertical, size * 0.07)
+        .frame(width: bodyWidth, height: bodyHeight)
         .background {
-            RoundedRectangle(cornerRadius: size * 0.1, style: .continuous)
-                .strokeBorder(MetricTheme.textSecondary.opacity(0.45), lineWidth: size * 0.035)
+            RoundedRectangle(cornerRadius: size * 0.06, style: .continuous)
+                .fill(MetricTheme.coolDeep.opacity(0.15))
+                .overlay {
+                    RoundedRectangle(cornerRadius: size * 0.06, style: .continuous)
+                        .strokeBorder(MetricTheme.coolDeep, lineWidth: size * 0.03)
+                }
         }
         .frame(width: size, height: size)
     }

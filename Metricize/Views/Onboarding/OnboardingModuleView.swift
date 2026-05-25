@@ -11,6 +11,7 @@ struct OnboardingModuleView: View {
     let unlockStore: ModuleUnlockStore
     let finalButtonTitle: String
     var completionModule: AppModule? = nil
+    var marksCompletionOnFinish: Bool = true
     var onComplete: (() -> Void)? = nil
 
     @State private var pageIndex = 0
@@ -70,7 +71,9 @@ struct OnboardingModuleView: View {
 
     private func advance() {
         if isLastPage {
-            unlockStore.markComplete(completionModule ?? module)
+            if marksCompletionOnFinish {
+                unlockStore.markComplete(completionModule ?? module)
+            }
             if let onComplete {
                 onComplete()
             } else {
@@ -91,6 +94,13 @@ private struct OnboardingPageContentView: View {
     @Environment(\.metricPalette) private var palette
     @State private var revealedItemCount = 0
     @State private var revealTask: Task<Void, Never>?
+    @State private var contentHeight: CGFloat = 0
+    @State private var viewportHeight: CGFloat = 0
+    @State private var scrollOffset: CGFloat = 0
+
+    private var isLandscape: Bool {
+        geometry.size.width > geometry.size.height
+    }
 
     private var leadingSentences: [String] {
         OnboardingText.sentences(in: page.body)
@@ -112,94 +122,67 @@ private struct OnboardingPageContentView: View {
     }
 
     private var titleSize: CGFloat {
-        OnboardingText.titleFontSize(in: geometry)
+        let base = OnboardingText.titleFontSize(in: geometry)
+        return isLandscape ? base * 0.9 : base
     }
 
     private var bodySize: CGFloat {
-        OnboardingText.bodyFontSize(
+        let base = OnboardingText.bodyFontSize(
             in: geometry,
             sentenceCount: leadingSentences.count + trailingSentences.count + (page.delayedFollowUp != nil ? 1 : 0),
             bulletCount: page.bulletItems.count,
             hasTitle: page.title != nil
         )
+        return isLandscape ? base * 0.88 : base
     }
 
     private var paragraphSpacing: CGFloat {
-        max(bodySize * 0.9, 28)
+        max(bodySize * 0.9, isLandscape ? 22 : 28)
+    }
+
+    private var showsMoreBelow: Bool {
+        let remaining = contentHeight - viewportHeight - scrollOffset
+        return contentHeight > viewportHeight + 8 && remaining > 24
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .center, spacing: paragraphSpacing) {
-                if let title = page.title {
-                    Text(title.withDecimalLineBreakProtection)
-                        .font(.system(size: titleSize, weight: .semibold, design: .rounded))
-                        .foregroundStyle(palette.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.bottom, 4)
-                }
-
-                ForEach(Array(leadingSentences.enumerated()), id: \.offset) { index, sentence in
-                    if isRevealed(.leadingSentence(index)) {
-                        Text(sentence)
-                            .font(.system(size: bodySize, weight: .regular, design: .rounded))
-                            .foregroundStyle(palette.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(bodySize * 0.2)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .transition(.opacity.combined(with: .offset(y: 8)))
-                    }
-                }
-
-                if !page.bulletItems.isEmpty {
-                    VStack(alignment: .center, spacing: max(bodySize * 0.55, 18)) {
-                        ForEach(Array(page.bulletItems.enumerated()), id: \.offset) { index, item in
-                            if isRevealed(.bullet(index)) {
-                                HStack(alignment: .top, spacing: 12) {
-                                    Text("•")
-                                        .font(.system(size: bodySize, weight: .semibold))
-                                        .foregroundStyle(MetricTheme.warmGlow)
-                                    Text(item.withDecimalLineBreakProtection)
-                                        .font(.system(size: bodySize * 0.92, weight: .regular, design: .rounded))
-                                        .foregroundStyle(palette.textSecondary)
-                                        .multilineTextAlignment(.leading)
-                                        .lineSpacing(bodySize * 0.15)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                .transition(.opacity.combined(with: .offset(y: 8)))
-                            }
+        ZStack(alignment: .bottom) {
+            ScrollView {
+                pageContent
+                    .background {
+                        GeometryReader { contentGeometry in
+                            Color.clear.preference(
+                                key: OnboardingScrollContentHeightKey.self,
+                                value: contentGeometry.size.height
+                            )
                         }
                     }
-                    .padding(.top, 4)
-                }
-
-                ForEach(Array(trailingSentences.enumerated()), id: \.offset) { index, sentence in
-                    if isRevealed(.trailingSentence(index)) {
-                        Text(sentence)
-                            .font(.system(size: bodySize, weight: .regular, design: .rounded))
-                            .foregroundStyle(palette.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(bodySize * 0.2)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .transition(.opacity.combined(with: .offset(y: 8)))
+                    .background {
+                        GeometryReader { scrollGeometry in
+                            Color.clear.preference(
+                                key: OnboardingScrollOffsetKey.self,
+                                value: -scrollGeometry.frame(in: .named("onboardingScroll")).minY
+                            )
+                        }
+                    }
+            }
+            .coordinateSpace(name: "onboardingScroll")
+            .background {
+                GeometryReader { viewportGeometry in
+                    Color.clear.onAppear {
+                        viewportHeight = viewportGeometry.size.height
+                    }
+                    .onChange(of: viewportGeometry.size.height) { _, newValue in
+                        viewportHeight = newValue
                     }
                 }
-
-                if isRevealed(.followUp), let followUp = page.delayedFollowUp {
-                    Text(followUp)
-                        .font(.system(size: bodySize, weight: .regular, design: .rounded))
-                        .foregroundStyle(palette.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(bodySize * 0.2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .transition(.opacity.combined(with: .offset(y: 8)))
-                }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.horizontal, max(28, geometry.size.width * 0.08))
-            .padding(.vertical, 8)
-            .frame(minHeight: geometry.size.height * 0.55, alignment: .center)
+            .onPreferenceChange(OnboardingScrollContentHeightKey.self) { contentHeight = $0 }
+            .onPreferenceChange(OnboardingScrollOffsetKey.self) { scrollOffset = $0 }
+
+            if showsMoreBelow {
+                scrollMoreIndicator
+            }
         }
         .onAppear {
             startRevealSequence()
@@ -210,6 +193,103 @@ private struct OnboardingPageContentView: View {
         .onDisappear {
             revealTask?.cancel()
         }
+    }
+
+    private var pageContent: some View {
+        VStack(alignment: .center, spacing: paragraphSpacing) {
+            if let title = page.title {
+                Text(title.withDecimalLineBreakProtection)
+                    .font(.system(size: titleSize, weight: .semibold, design: .rounded))
+                    .foregroundStyle(palette.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 4)
+            }
+
+            ForEach(Array(leadingSentences.enumerated()), id: \.offset) { index, sentence in
+                if isRevealed(.leadingSentence(index)) {
+                    Text(sentence)
+                        .font(.system(size: bodySize, weight: .regular, design: .rounded))
+                        .foregroundStyle(palette.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(bodySize * 0.2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity.combined(with: .offset(y: 8)))
+                }
+            }
+
+            if !page.bulletItems.isEmpty {
+                VStack(alignment: .center, spacing: max(bodySize * 0.55, 18)) {
+                    ForEach(Array(page.bulletItems.enumerated()), id: \.offset) { index, item in
+                        if isRevealed(.bullet(index)) {
+                            HStack(alignment: .top, spacing: 12) {
+                                Text("•")
+                                    .font(.system(size: bodySize, weight: .semibold))
+                                    .foregroundStyle(MetricTheme.warmGlow)
+                                Text(item.withDecimalLineBreakProtection)
+                                    .font(.system(size: bodySize * 0.92, weight: .regular, design: .rounded))
+                                    .foregroundStyle(palette.textSecondary)
+                                    .multilineTextAlignment(.leading)
+                                    .lineSpacing(bodySize * 0.15)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .transition(.opacity.combined(with: .offset(y: 8)))
+                        }
+                    }
+                }
+                .padding(.top, 4)
+            }
+
+            ForEach(Array(trailingSentences.enumerated()), id: \.offset) { index, sentence in
+                if isRevealed(.trailingSentence(index)) {
+                    Text(sentence)
+                        .font(.system(size: bodySize, weight: .regular, design: .rounded))
+                        .foregroundStyle(palette.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(bodySize * 0.2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity.combined(with: .offset(y: 8)))
+                }
+            }
+
+            if isRevealed(.followUp), let followUp = page.delayedFollowUp {
+                Text(followUp)
+                    .font(.system(size: bodySize, weight: .regular, design: .rounded))
+                    .foregroundStyle(palette.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(bodySize * 0.2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity.combined(with: .offset(y: 8)))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.horizontal, max(28, geometry.size.width * 0.08))
+        .padding(.vertical, 8)
+        .padding(.bottom, showsMoreBelow ? 36 : 8)
+        .frame(minHeight: geometry.size.height * 0.55, alignment: .center)
+    }
+
+    private var scrollMoreIndicator: some View {
+        VStack(spacing: 4) {
+            LinearGradient(
+                colors: [palette.ink.opacity(0), palette.ink.opacity(0.88)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 48)
+            .allowsHitTesting(false)
+
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.bold))
+                Text("More below")
+                    .font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(palette.textSecondary)
+            .padding(.bottom, 6)
+            .symbolEffect(.bounce, options: .repeating, value: showsMoreBelow)
+        }
+        .allowsHitTesting(false)
     }
 
     private func isRevealed(_ item: OnboardingRevealItem) -> Bool {
@@ -237,6 +317,22 @@ private struct OnboardingPageContentView: View {
                 }
             }
         }
+    }
+}
+
+private struct OnboardingScrollContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct OnboardingScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 

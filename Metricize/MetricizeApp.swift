@@ -6,10 +6,19 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 @main
 struct MetricizeApp: App {
     @State private var settings = AppSettingsStore()
+
+    init() {
+        AppFont.register()
+    }
 
     var body: some Scene {
         WindowGroup {

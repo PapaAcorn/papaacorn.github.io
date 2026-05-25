@@ -11,6 +11,7 @@ struct MultipleChoiceChallengeView: View {
     let isEnabled: Bool
     let onSelect: (Int) -> Void
     var layout: ChallengeLayout = .stacked
+    var compact: Bool = false
 
     @State private var appeared = false
     @Environment(\.metricPalette) private var palette
@@ -28,12 +29,12 @@ struct MultipleChoiceChallengeView: View {
         Group {
             switch layout {
             case .stacked:
-                VStack(spacing: 32) {
+                VStack(spacing: compact ? 20 : 32) {
                     prompt
                     choiceList
                 }
             case .sideBySide:
-                HStack(alignment: .center, spacing: 28) {
+                HStack(alignment: .center, spacing: compact ? 16 : 28) {
                     prompt
                         .frame(maxWidth: .infinity)
                     choiceList
@@ -60,19 +61,21 @@ struct MultipleChoiceChallengeView: View {
             value: card.promptValue,
             unit: card.promptUnit,
             caption: card.label,
-            hint: hint
+            hint: hint,
+            compact: compact
         )
     }
 
     private var choiceList: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: compact ? 6 : 10) {
             ForEach(Array(choices.enumerated()), id: \.element) { index, choice in
                 ChoiceButton(
                     value: choice,
                     unit: card.answerUnit,
                     isEnabled: isEnabled,
                     delay: Double(index) * 0.06,
-                    appeared: appeared
+                    appeared: appeared,
+                    compact: compact
                 ) {
                     onSelect(choice)
                 }
@@ -87,6 +90,7 @@ private struct ChoiceButton: View {
     let isEnabled: Bool
     let delay: Double
     let appeared: Bool
+    var compact: Bool = false
     let action: () -> Void
 
     @State private var isPressed = false
@@ -113,7 +117,7 @@ private struct ChoiceButton: View {
                     }
 
                 Text("\(value)\(unit)")
-                    .font(.title3.weight(.semibold).monospacedDigit())
+                    .font(compact ? .body.weight(.semibold).monospacedDigit() : .title3.weight(.semibold).monospacedDigit())
                     .foregroundStyle(palette.textPrimary)
 
                 Spacer()
@@ -122,8 +126,8 @@ private struct ChoiceButton: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(palette.textTertiary)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
+            .padding(.horizontal, compact ? 14 : 20)
+            .padding(.vertical, compact ? 12 : 18)
             .background {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.ultraThinMaterial)

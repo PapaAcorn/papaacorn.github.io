@@ -25,7 +25,7 @@ enum AppModule: String, Codable, Identifiable {
     var subtitle: String {
         switch self {
         case .howToUse: "What this app is — and isn't"
-        case .insideAndOut: "Ambient temperature intuition"
+        case .insideAndOut: "Ambient Temperatures"
         case .insideOutsideBasics: "Celsius fundamentals and milestones"
         case .learnInsideOutside: "Build your ambient temperature intuition"
         }
@@ -57,9 +57,7 @@ enum AppModule: String, Codable, Identifiable {
 
     /// Whether the intro text screens for Inside & Out have been completed.
     static func hasCompletedInsideAndOutIntro(in store: ModuleUnlockStore) -> Bool {
-        store.isComplete(.insideOutsideBasics)
-            || store.isComplete(.insideAndOut)
-            || store.isComplete(.learnInsideOutside)
+        store.isComplete(insideAndOutIntroCompletion)
     }
 
     /// Module key used when persisting intro completion for Inside & Out.
