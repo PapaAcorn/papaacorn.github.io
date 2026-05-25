@@ -29,7 +29,7 @@ struct HomeView: View {
 
     private var heroSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Metricize")
+            Text("Metricize Me")
                 .font(.system(size: 38, weight: .bold, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
