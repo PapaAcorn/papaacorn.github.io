@@ -27,9 +27,10 @@ struct TemperatureGameView: View {
         VStack(spacing: 0) {
             if !isFullScreenPhase {
                 RoundProgressHeader(
-                    roundTitle: viewModel.currentRound.title,
-                    learned: progressStore.learnedCardCount(in: progressStore.currentRoundIndex),
-                    total: viewModel.currentRound.cards.count
+                    roundNumber: progressStore.currentRoundIndex + 1,
+                    totalRounds: TemperatureCurriculum.rounds.count,
+                    learnedConversions: progressStore.learnedConversionCount(in: progressStore.currentRoundIndex),
+                    totalConversions: progressStore.anchorCount(in: progressStore.currentRoundIndex)
                 )
             }
 

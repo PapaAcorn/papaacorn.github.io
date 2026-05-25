@@ -259,50 +259,52 @@ struct PrimaryActionButton: View {
 }
 
 struct RoundProgressHeader: View {
-    let roundTitle: String
-    let learned: Int
-    let total: Int
+    let roundNumber: Int
+    let totalRounds: Int
+    let learnedConversions: Int
+    let totalConversions: Int
 
     private var progress: Double {
-        guard total > 0 else { return 0 }
-        return Double(learned) / Double(total)
+        guard totalConversions > 0 else { return 0 }
+        return Double(learnedConversions) / Double(totalConversions)
     }
 
     var body: some View {
         VStack(spacing: 14) {
             HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Round")
-                        .font(.caption2.weight(.semibold))
-                        .tracking(1)
-                        .foregroundStyle(MetricTheme.textTertiary)
-                    Text(roundTitle)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(MetricTheme.textPrimary)
-                }
+                Text("Round \(roundNumber) of \(totalRounds)")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(MetricTheme.textPrimary)
 
                 Spacer()
 
-                ZStack {
-                    Circle()
-                        .stroke(Color.white.opacity(0.1), lineWidth: 4)
-                    Circle()
-                        .trim(from: 0, to: progress)
-                        .stroke(
-                            AngularGradient(
-                                colors: [MetricTheme.warmEmber, MetricTheme.warmGlow, MetricTheme.warmEmber],
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 0.5), value: progress)
+                VStack(alignment: .trailing, spacing: 6) {
+                    Text("Conversions Learned")
+                        .font(.caption2.weight(.semibold))
+                        .tracking(0.6)
+                        .foregroundStyle(MetricTheme.textTertiary)
 
-                    Text("\(learned)/\(total)")
-                        .font(.caption2.weight(.bold).monospacedDigit())
-                        .foregroundStyle(MetricTheme.textSecondary)
+                    ZStack {
+                        Circle()
+                            .stroke(Color.white.opacity(0.1), lineWidth: 4)
+                        Circle()
+                            .trim(from: 0, to: progress)
+                            .stroke(
+                                AngularGradient(
+                                    colors: [MetricTheme.warmEmber, MetricTheme.warmGlow, MetricTheme.warmEmber],
+                                    center: .center
+                                ),
+                                style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+                            .animation(.spring(response: 0.5), value: progress)
+
+                        Text("\(learnedConversions)/\(totalConversions)")
+                            .font(.caption2.weight(.bold).monospacedDigit())
+                            .foregroundStyle(MetricTheme.textSecondary)
+                    }
+                    .frame(width: 52, height: 52)
                 }
-                .frame(width: 44, height: 44)
             }
 
             GeometryReader { geo in

@@ -40,9 +40,9 @@ final class TemperatureGameViewModel {
     }
 
     var roundProgressText: String {
-        let learned = progressStore.learnedCardCount(in: progressStore.currentRoundIndex)
-        let total = currentRound.cards.count
-        return "\(learned)/\(total) learned"
+        let learned = progressStore.learnedConversionCount(in: progressStore.currentRoundIndex)
+        let total = progressStore.anchorCount(in: progressStore.currentRoundIndex)
+        return "\(learned)/\(total) conversions learned"
     }
 
     func resumeFromSavedState() {

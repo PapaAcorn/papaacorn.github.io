@@ -19,25 +19,27 @@ struct OnboardingModuleView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            progressHeader
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                progressHeader
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                    .padding(.bottom, 20)
+
+                pageView(pages[pageIndex], in: geometry)
+                    .animation(.easeInOut, value: pageIndex)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+                    .id(pageIndex)
+
+                PrimaryActionButton(title: isLastPage ? finalButtonTitle : "Next") {
+                    advance()
+                }
                 .padding(.horizontal, 24)
-                .padding(.top, 16)
-                .padding(.bottom, 24)
-
-            pageView(pages[pageIndex])
-                .animation(.easeInOut, value: pageIndex)
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
-                .id(pageIndex)
-
-            PrimaryActionButton(title: isLastPage ? finalButtonTitle : "Next") {
-                advance()
+                .padding(.bottom, max(24, geometry.safeAreaInsets.bottom + 12))
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 36)
         }
         .navigationTitle(module.title)
         #if os(iOS)
@@ -59,30 +61,46 @@ struct OnboardingModuleView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func pageView(_ page: OnboardingPage) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+    private func pageView(_ page: OnboardingPage, in geometry: GeometryProxy) -> some View {
+        let sentences = OnboardingText.sentences(in: page.body)
+        let titleSize = OnboardingText.titleFontSize(in: geometry)
+        let bodySize = OnboardingText.bodyFontSize(
+            in: geometry,
+            sentenceCount: sentences.count,
+            bulletCount: page.bulletItems.count,
+            hasTitle: page.title != nil
+        )
+        let paragraphSpacing = max(bodySize * 0.55, 16)
+
+        return ScrollView {
+            VStack(alignment: .leading, spacing: paragraphSpacing) {
                 if let title = page.title {
                     Text(title)
-                        .font(.title2.weight(.semibold))
+                        .font(.system(size: titleSize, weight: .semibold, design: .rounded))
                         .foregroundStyle(MetricTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.bottom, 4)
                 }
 
-                Text(page.body)
-                    .font(.title3.weight(.regular))
-                    .foregroundStyle(MetricTheme.textSecondary)
-                    .lineSpacing(6)
-                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(Array(sentences.enumerated()), id: \.offset) { _, sentence in
+                    Text(sentence)
+                        .font(.system(size: bodySize, weight: .regular, design: .rounded))
+                        .foregroundStyle(MetricTheme.textSecondary)
+                        .lineSpacing(bodySize * 0.2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 if !page.bulletItems.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: max(bodySize * 0.45, 14)) {
                         ForEach(page.bulletItems, id: \.self) { item in
-                            HStack(alignment: .top, spacing: 10) {
+                            HStack(alignment: .top, spacing: 12) {
                                 Text("•")
+                                    .font(.system(size: bodySize, weight: .semibold))
                                     .foregroundStyle(MetricTheme.warmGlow)
                                 Text(item)
-                                    .font(.body)
+                                    .font(.system(size: bodySize * 0.92, weight: .regular, design: .rounded))
                                     .foregroundStyle(MetricTheme.textSecondary)
+                                    .lineSpacing(bodySize * 0.15)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
@@ -90,8 +108,10 @@ struct OnboardingModuleView: View {
                     .padding(.top, 4)
                 }
             }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, max(28, geometry.size.width * 0.08))
+            .padding(.vertical, 8)
+            .frame(minHeight: geometry.size.height * 0.55, alignment: .center)
         }
     }
 
@@ -104,6 +124,47 @@ struct OnboardingModuleView: View {
                 pageIndex += 1
             }
         }
+    }
+}
+
+private enum OnboardingText {
+    static func sentences(in text: String) -> [String] {
+        var sentences: [String] = []
+        var current = ""
+
+        for character in text {
+            current.append(character)
+            if ".!?".contains(character) {
+                let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    sentences.append(trimmed)
+                }
+                current = ""
+            }
+        }
+
+        let remainder = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !remainder.isEmpty {
+            sentences.append(remainder)
+        }
+
+        return sentences
+    }
+
+    static func titleFontSize(in geometry: GeometryProxy) -> CGFloat {
+        min(max(geometry.size.width * 0.075, 26), 34)
+    }
+
+    static func bodyFontSize(
+        in geometry: GeometryProxy,
+        sentenceCount: Int,
+        bulletCount: Int,
+        hasTitle: Bool
+    ) -> CGFloat {
+        let contentLines = CGFloat(sentenceCount + bulletCount + (hasTitle ? 2 : 0))
+        let heightBased = geometry.size.height * 0.72 / max(contentLines, 4)
+        let widthBased = geometry.size.width * 0.058
+        return min(max(min(heightBased, widthBased), 22), 36)
     }
 }
 

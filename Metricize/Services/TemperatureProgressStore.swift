@@ -45,6 +45,19 @@ final class TemperatureProgressStore {
             .count
     }
 
+    /// A conversion is learned when both C→F and F→C cards for the same anchor are learned.
+    func learnedConversionCount(in roundIndex: Int) -> Int {
+        let cards = TemperatureCurriculum.cards(forRound: roundIndex)
+        let anchors = Set(cards.map(\.celsius))
+        return anchors.filter { anchor in
+            cards.filter { $0.celsius == anchor }.allSatisfy { progress(for: $0).isLearned }
+        }.count
+    }
+
+    func anchorCount(in roundIndex: Int) -> Int {
+        TemperatureCurriculum.rounds.first(where: { $0.index == roundIndex })?.anchorCount ?? 5
+    }
+
     func advanceToNextRoundIfNeeded() {
         guard isRoundComplete(currentRoundIndex) else { return }
         let nextIndex = currentRoundIndex + 1

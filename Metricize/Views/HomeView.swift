@@ -197,12 +197,12 @@ private struct LearnModuleCard: View {
     let isUnlocked: Bool
     let isComplete: Bool
 
-    private var round: TemperatureRound {
-        TemperatureCurriculum.rounds[progressStore.currentRoundIndex]
+    private var learned: Int {
+        progressStore.learnedConversionCount(in: progressStore.currentRoundIndex)
     }
 
-    private var learned: Int {
-        progressStore.learnedCardCount(in: progressStore.currentRoundIndex)
+    private var totalConversions: Int {
+        progressStore.anchorCount(in: progressStore.currentRoundIndex)
     }
 
     private var hasProgress: Bool {
@@ -238,7 +238,7 @@ private struct LearnModuleCard: View {
                         .font(.caption)
                         .foregroundStyle(MetricTheme.textTertiary)
                 } else if hasProgress {
-                    Text("\(round.title) · \(learned)/\(round.cards.count) learned")
+                    Text("Round \(progressStore.currentRoundIndex + 1) · \(learned)/\(totalConversions) conversions")
                         .font(.caption)
                         .foregroundStyle(MetricTheme.textSecondary)
                 } else {
