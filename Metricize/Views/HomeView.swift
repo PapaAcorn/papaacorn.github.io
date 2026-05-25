@@ -10,15 +10,20 @@ struct HomeView: View {
 
     @State private var temperatureProgress = TemperatureProgressStore()
     @State private var unlockStore = ModuleUnlockStore()
-    @State private var launchLearnModule = false
+
+    private let tileColumns = [
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16),
+    ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     heroSection
-                    modulesSection
-                    comingSoonSection
+                    howToUseSection
+                    moduleTileGrid
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 40)
@@ -49,9 +54,6 @@ struct HomeView: View {
                 }
             }
             #endif
-            .navigationDestination(isPresented: $launchLearnModule) {
-                TemperatureGameView(progressStore: temperatureProgress)
-            }
         }
     }
 
@@ -75,80 +77,75 @@ struct HomeView: View {
         .padding(.top, 12)
     }
 
-    private var modulesSection: some View {
+    private var howToUseSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("Modules")
+            sectionLabel("Start Here")
 
             moduleLink(for: .howToUse) {
-                ModuleCard(
-                    module: .howToUse,
+                HowToUseModuleCard(
                     isUnlocked: unlockStore.isUnlocked(.howToUse),
                     isComplete: unlockStore.isComplete(.howToUse)
                 )
             }
 
-            moduleLink(for: .insideOutsideBasics) {
-                ModuleCard(
-                    module: .insideOutsideBasics,
-                    isUnlocked: unlockStore.isUnlocked(.insideOutsideBasics),
-                    isComplete: unlockStore.isComplete(.insideOutsideBasics)
-                )
-            }
+            Divider()
+                .overlay(palette.divider)
+                .padding(.top, 4)
+        }
+    }
 
-            learnModuleRow
+    private var moduleTileGrid: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionLabel("Modules")
+
+            LazyVGrid(columns: tileColumns, spacing: 20) {
+                ForEach(ModuleTileItem.homeGrid) { tile in
+                    moduleTile(for: tile)
+                }
+            }
         }
     }
 
     @ViewBuilder
-    private var learnModuleRow: some View {
-        HStack(spacing: 12) {
-            if unlockStore.isUnlocked(.learnInsideOutside) {
+    private func moduleTile(for tile: ModuleTileItem) -> some View {
+        switch tile {
+        case .insideAndOut:
+            if unlockStore.isUnlocked(.insideAndOut) {
                 NavigationLink {
-                    TemperatureGameView(progressStore: temperatureProgress)
+                    InsideAndOutModuleView(
+                        unlockStore: unlockStore,
+                        progressStore: temperatureProgress
+                    )
                 } label: {
-                    LearnModuleCard(
-                        isUnlocked: true,
-                        roundLabel: TemperatureCurriculum.subRoundLabel(
-                            majorRoundIndex: temperatureProgress.currentRoundIndex,
-                            subRoundIndex: temperatureProgress.currentSubRoundIndex
-                        ),
-                        learned: temperatureProgress.learnedCountInCurrentSubRound(),
-                        total: temperatureProgress.totalCountInCurrentSubRound(),
-                        hasProgress: !temperatureProgress.progressByCardID.isEmpty
+                    ModuleTileView(
+                        tile: tile,
+                        isLocked: false,
+                        progressCaption: insideAndOutProgressCaption
                     )
                 }
                 .buttonStyle(.plain)
-
-                Button {
-                    temperatureProgress.resetProgress()
-                } label: {
-                    Text("Reset")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(palette.textSecondary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background {
-                            Capsule(style: .continuous)
-                                .fill(palette.chipFill)
-                                .overlay {
-                                    Capsule(style: .continuous)
-                                        .strokeBorder(palette.chipStroke, lineWidth: 1)
-                                }
-                        }
-                }
-                .buttonStyle(.plain)
             } else {
-                LearnModuleCard(
-                    isUnlocked: false,
-                    roundLabel: "1.1",
-                    learned: 0,
-                    total: 5,
-                    hasProgress: false
-                )
-                .opacity(0.45)
-                .allowsHitTesting(false)
+                ModuleTileView(tile: tile, isLocked: true, progressCaption: nil)
+                    .opacity(0.45)
+                    .allowsHitTesting(false)
             }
+
+        case .comingSoon:
+            ModuleTileView(tile: tile, isLocked: false, progressCaption: nil)
+                .opacity(0.72)
+                .allowsHitTesting(false)
         }
+    }
+
+    private var insideAndOutProgressCaption: String? {
+        guard !temperatureProgress.progressByCardID.isEmpty else { return nil }
+        let roundLabel = TemperatureCurriculum.subRoundLabel(
+            majorRoundIndex: temperatureProgress.currentRoundIndex,
+            subRoundIndex: temperatureProgress.currentSubRoundIndex
+        )
+        let learned = temperatureProgress.learnedCountInCurrentSubRound()
+        let total = temperatureProgress.totalCountInCurrentSubRound()
+        return "Round \(roundLabel) · \(learned)/\(total)"
     }
 
     @ViewBuilder
@@ -177,30 +174,16 @@ struct HomeView: View {
                 unlockStore: unlockStore,
                 finalButtonTitle: "Get Started"
             )
-        case .insideOutsideBasics:
-            OnboardingModuleView(
-                module: .insideOutsideBasics,
-                pages: InsideOutsideBasicsContent.pages,
+        case .insideAndOut:
+            InsideAndOutModuleView(
                 unlockStore: unlockStore,
-                finalButtonTitle: "Start Learning",
-                onComplete: { launchLearnModule = true }
+                progressStore: temperatureProgress
             )
-        case .learnInsideOutside:
-            TemperatureGameView(progressStore: temperatureProgress)
-        }
-    }
-
-    private var comingSoonSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("Coming Soon")
-
-            ForEach(ComingSoonModule.allCases) { module in
-                ModulePreviewCard(
-                    title: module.title,
-                    subtitle: module.subtitle,
-                    systemImage: module.systemImage
-                )
-            }
+        case .insideOutsideBasics, .learnInsideOutside:
+            InsideAndOutModuleView(
+                unlockStore: unlockStore,
+                progressStore: temperatureProgress
+            )
         }
     }
 
@@ -212,28 +195,27 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Module cards
+// MARK: - How to Use row card
 
-private struct ModuleCard: View {
+private struct HowToUseModuleCard: View {
     @Environment(\.metricPalette) private var palette
 
-    let module: AppModule
     let isUnlocked: Bool
     let isComplete: Bool
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: module.systemImage)
+            Image(systemName: AppModule.howToUse.systemImage)
                 .font(.title2)
                 .foregroundStyle(MetricTheme.coolFrost)
                 .frame(width: 48, height: 48)
                 .background(Circle().fill(palette.chipFill))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(module.title)
+                Text(AppModule.howToUse.title)
                     .font(.headline)
                     .foregroundStyle(palette.textPrimary)
-                Text(module.subtitle)
+                Text(AppModule.howToUse.subtitle)
                     .font(.subheadline)
                     .foregroundStyle(palette.textSecondary)
             }
@@ -265,131 +247,93 @@ private struct ModuleCard: View {
     }
 }
 
-private struct LearnModuleCard: View {
+// MARK: - Square module tiles
+
+private struct ModuleTileView: View {
     @Environment(\.metricPalette) private var palette
 
-    let isUnlocked: Bool
-    let roundLabel: String
-    let learned: Int
-    let total: Int
-    let hasProgress: Bool
+    let tile: ModuleTileItem
+    let isLocked: Bool
+    let progressCaption: String?
+
+    private var isComingSoon: Bool {
+        if case .comingSoon = tile { return true }
+        return false
+    }
 
     var body: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [MetricTheme.warmGlow.opacity(0.5), MetricTheme.warmEmber.opacity(0.15)],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 36
-                        )
-                    )
-                    .frame(width: 48, height: 48)
+        VStack(spacing: 10) {
+            ZStack(alignment: .topTrailing) {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(tileBackground)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(tileBorder, lineWidth: 1)
+                    }
+                    .overlay {
+                        ModuleTileIconView(kind: ModuleTileIconKind(tile: tile), size: 44)
+                    }
+                    .aspectRatio(1, contentMode: .fit)
 
-                Image(systemName: AppModule.learnInsideOutside.systemImage)
-                    .font(.title3.weight(.medium))
-                    .foregroundStyle(MetricTheme.warmGlow)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(AppModule.learnInsideOutside.title)
-                    .font(.headline)
-                    .foregroundStyle(palette.textPrimary)
-
-                if !isUnlocked {
-                    Text("Complete Inside/Outside Basics first")
-                        .font(.caption)
+                if isLocked {
+                    Image(systemName: "lock.fill")
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(palette.textTertiary)
-                } else if hasProgress {
-                    Text("Round \(roundLabel) · \(learned)/\(total) learned")
-                        .font(.caption)
-                        .foregroundStyle(palette.textSecondary)
-                } else {
-                    Text(AppModule.learnInsideOutside.subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(palette.textSecondary)
+                        .padding(8)
+                } else if isComingSoon {
+                    Text("Soon")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(palette.textTertiary)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(palette.chipFill))
+                        .padding(8)
                 }
             }
 
-            Spacer()
+            VStack(spacing: 3) {
+                Text(tile.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(isComingSoon || isLocked ? palette.textSecondary : palette.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            if !isUnlocked {
-                Label("Locked", systemImage: "lock.fill")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(palette.textTertiary)
-            } else {
-                Image(systemName: "arrow.up.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(palette.textTertiary)
-            }
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            MetricTheme.warmEmber.opacity(isUnlocked ? 0.22 : 0.08),
-                            palette.cardFill,
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(palette.glassStroke, lineWidth: 1)
+                if let progressCaption {
+                    Text(progressCaption)
+                        .font(.caption2)
+                        .foregroundStyle(palette.textTertiary)
+                        .multilineTextAlignment(.center)
                 }
+            }
         }
     }
-}
 
-private struct ModulePreviewCard: View {
-    @Environment(\.metricPalette) private var palette
-
-    let title: String
-    let subtitle: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(palette.textSecondary)
-                .frame(width: 44, height: 44)
-                .background(Circle().fill(palette.chipFill))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(palette.textSecondary)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(palette.textTertiary)
-            }
-
-            Spacer()
-
-            Text("Soon")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(palette.textTertiary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(palette.chipFill))
+    private var tileBackground: AnyShapeStyle {
+        switch tile {
+        case .insideAndOut:
+            AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        MetricTheme.coolFrost.opacity(isLocked ? 0.08 : 0.18),
+                        MetricTheme.warmEmber.opacity(isLocked ? 0.06 : 0.14),
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        case .comingSoon:
+            AnyShapeStyle(palette.cardFillMuted)
         }
-        .padding(18)
-        .background {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(palette.cardFillMuted)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(palette.chipStroke, lineWidth: 1)
-                }
+    }
+
+    private var tileBorder: AnyShapeStyle {
+        switch tile {
+        case .insideAndOut:
+            AnyShapeStyle(palette.glassStroke)
+        case .comingSoon:
+            AnyShapeStyle(palette.chipStroke)
         }
-        .opacity(0.85)
     }
 }
 

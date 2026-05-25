@@ -19,6 +19,11 @@ final class ModuleUnlockStore {
     }
 
     func isUnlocked(_ module: AppModule) -> Bool {
+        if module == .insideAndOut {
+            return isComplete(.howToUse)
+                || isComplete(.insideOutsideBasics)
+                || isComplete(.learnInsideOutside)
+        }
         guard let prerequisite = module.prerequisite() else { return true }
         return completedModules.contains(prerequisite)
     }

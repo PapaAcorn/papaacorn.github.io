@@ -86,7 +86,7 @@ struct CardProgress: Codable, Equatable {
     var totalIncorrect: Int = 0
 
     var isLearned: Bool {
-        consecutiveCorrect >= TemperatureGameConstants.requiredConsecutiveCorrect
+        consecutiveCorrect >= LearningPreferences.requiredConsecutiveCorrect
     }
 }
 
@@ -104,10 +104,9 @@ struct TemperatureRound: Identifiable {
 }
 
 enum TemperatureGameConstants {
-    static let requiredConsecutiveCorrect = 3
     static let toleranceDegrees = 3
     static let subRoundsPerRound = 3
-    static let fahrenheitMin = -10
+    static let fahrenheitMin = 0
     static let fahrenheitMax = 110
     static let celsiusMin = -23
     static let celsiusMax = 43

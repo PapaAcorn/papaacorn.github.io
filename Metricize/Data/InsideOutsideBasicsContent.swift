@@ -46,8 +46,8 @@ enum InsideOutsideBasicsContent {
         ),
         OnboardingPage(
             index: 7,
-            body: "You'll be learning 5 temps at a time in 4 rounds. Each round has 3 sub-rounds.",
-            bodyAfterBullets: "Your goal is to memorize, not math. Don't bother trying to convert. You don't need to be doing math in your head.",
+            body: "You'll be learning 5 temps at a time in 3 rounds. Each round has 3 sub-rounds.",
+            bodyAfterBullets: "Your goal is to memorize, not math. Don't bother trying to convert.",
             bulletItems: [
                 "Celsius to Fahrenheit.",
                 "Fahrenheit to Celsius.",

@@ -14,17 +14,29 @@ final class AppSettingsStore {
         didSet { save() }
     }
 
+    var requiredConsecutiveCorrect: Int {
+        didSet {
+            let clamped = min(max(requiredConsecutiveCorrect, 1), 5)
+            if clamped != requiredConsecutiveCorrect {
+                requiredConsecutiveCorrect = clamped
+                return
+            }
+            LearningPreferences.saveRequiredConsecutiveCorrect(clamped)
+        }
+    }
+
     var preferredColorScheme: ColorScheme? {
         appearanceMode.preferredColorScheme
     }
 
     init() {
+        appearanceMode = .system
         if let raw = UserDefaults.standard.string(forKey: appearanceKey),
            let mode = AppAppearanceMode(rawValue: raw) {
             appearanceMode = mode
-        } else {
-            appearanceMode = .system
         }
+
+        requiredConsecutiveCorrect = LearningPreferences.requiredConsecutiveCorrect
     }
 
     private func save() {

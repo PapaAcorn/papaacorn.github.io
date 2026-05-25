@@ -10,6 +10,7 @@ struct OnboardingModuleView: View {
     let pages: [OnboardingPage]
     let unlockStore: ModuleUnlockStore
     let finalButtonTitle: String
+    var completionModule: AppModule? = nil
     var onComplete: (() -> Void)? = nil
 
     @State private var pageIndex = 0
@@ -69,14 +70,11 @@ struct OnboardingModuleView: View {
 
     private func advance() {
         if isLastPage {
-            unlockStore.markComplete(module)
-            let completion = onComplete
-            dismiss()
-            if let completion {
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(350))
-                    completion()
-                }
+            unlockStore.markComplete(completionModule ?? module)
+            if let onComplete {
+                onComplete()
+            } else {
+                dismiss()
             }
         } else {
             withAnimation {

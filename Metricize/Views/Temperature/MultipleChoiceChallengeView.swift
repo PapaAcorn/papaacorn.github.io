@@ -10,6 +10,7 @@ struct MultipleChoiceChallengeView: View {
     let choices: [Int]
     let isEnabled: Bool
     let onSelect: (Int) -> Void
+    var layout: ChallengeLayout = .stacked
 
     @State private var appeared = false
     @Environment(\.metricPalette) private var palette
@@ -24,25 +25,19 @@ struct MultipleChoiceChallengeView: View {
     }
 
     var body: some View {
-        VStack(spacing: 32) {
-            TemperaturePromptView(
-                value: card.promptValue,
-                unit: card.promptUnit,
-                caption: card.label,
-                hint: hint
-            )
-
-            VStack(spacing: 10) {
-                ForEach(Array(choices.enumerated()), id: \.element) { index, choice in
-                    ChoiceButton(
-                        value: choice,
-                        unit: card.answerUnit,
-                        isEnabled: isEnabled,
-                        delay: Double(index) * 0.06,
-                        appeared: appeared
-                    ) {
-                        onSelect(choice)
-                    }
+        Group {
+            switch layout {
+            case .stacked:
+                VStack(spacing: 32) {
+                    prompt
+                    choiceList
+                }
+            case .sideBySide:
+                HStack(alignment: .center, spacing: 28) {
+                    prompt
+                        .frame(maxWidth: .infinity)
+                    choiceList
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -56,6 +51,31 @@ struct MultipleChoiceChallengeView: View {
             appeared = false
             withAnimation(.spring(response: 0.5, dampingFraction: 0.82).delay(0.05)) {
                 appeared = true
+            }
+        }
+    }
+
+    private var prompt: some View {
+        TemperaturePromptView(
+            value: card.promptValue,
+            unit: card.promptUnit,
+            caption: card.label,
+            hint: hint
+        )
+    }
+
+    private var choiceList: some View {
+        VStack(spacing: 10) {
+            ForEach(Array(choices.enumerated()), id: \.element) { index, choice in
+                ChoiceButton(
+                    value: choice,
+                    unit: card.answerUnit,
+                    isEnabled: isEnabled,
+                    delay: Double(index) * 0.06,
+                    appeared: appeared
+                ) {
+                    onSelect(choice)
+                }
             }
         }
     }

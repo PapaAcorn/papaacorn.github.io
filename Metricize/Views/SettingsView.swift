@@ -13,6 +13,7 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 appearanceSection
+                learningSection
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
@@ -59,6 +60,71 @@ struct SettingsView: View {
                     }
                 }
             }
+            .background(settingsCardBackground)
+        }
+    }
+
+    private var learningSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionLabel("Learning")
+
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Times correct to learn")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(palette.textPrimary)
+                    Text("How many consecutive correct answers mark a temperature as learned.")
+                        .font(.caption)
+                        .foregroundStyle(palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HStack(spacing: 16) {
+                    Button {
+                        if settings.requiredConsecutiveCorrect > 1 {
+                            settings.requiredConsecutiveCorrect -= 1
+                        }
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(
+                                settings.requiredConsecutiveCorrect > 1
+                                    ? MetricTheme.warmEmber
+                                    : palette.textTertiary
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(settings.requiredConsecutiveCorrect <= 1)
+
+                    Text("\(settings.requiredConsecutiveCorrect)")
+                        .font(.title2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(palette.textPrimary)
+                        .frame(minWidth: 32)
+
+                    Button {
+                        if settings.requiredConsecutiveCorrect < 5 {
+                            settings.requiredConsecutiveCorrect += 1
+                        }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(
+                                settings.requiredConsecutiveCorrect < 5
+                                    ? MetricTheme.warmEmber
+                                    : palette.textTertiary
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(settings.requiredConsecutiveCorrect >= 5)
+
+                    Spacer()
+
+                    Text("1–5")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(palette.textTertiary)
+                }
+            }
+            .padding(20)
             .background(settingsCardBackground)
         }
     }

@@ -10,6 +10,7 @@ struct CelsiusSliderView: View {
     var label: String?
     @Binding var selectedCelsius: Double
     let isEnabled: Bool
+    var layout: ChallengeLayout = .stacked
 
     @Environment(\.metricPalette) private var palette
 
@@ -20,21 +21,35 @@ struct CelsiusSliderView: View {
     }
 
     var body: some View {
-        VStack(spacing: 28) {
-            TemperaturePromptView(
-                value: fahrenheit,
-                unit: "°F",
-                caption: label,
-                hint: "Drag the marker on the Celsius scale"
-            )
-
-            HStack(alignment: .center, spacing: 28) {
-                celsiusTrack
-                celsiusReadout
+        Group {
+            switch layout {
+            case .stacked:
+                VStack(spacing: 28) {
+                    prompt
+                    sliderControls
+                }
+            case .sideBySide:
+                sliderControls
             }
-            .frame(maxHeight: 280)
         }
         .padding(.horizontal, 8)
+    }
+
+    private var prompt: some View {
+        TemperaturePromptView(
+            value: fahrenheit,
+            unit: "°F",
+            caption: label,
+            hint: "Drag the marker on the Celsius scale"
+        )
+    }
+
+    private var sliderControls: some View {
+        HStack(alignment: .center, spacing: 28) {
+            celsiusTrack
+            celsiusReadout
+        }
+        .frame(maxHeight: layout == .sideBySide ? 320 : 280)
     }
 
     private var celsiusTrack: some View {
@@ -159,8 +174,8 @@ struct CelsiusSliderView: View {
     }
 
     private func tickMarks(in height: CGFloat) -> some View {
-        let ticks = [43, 30, 20, 10, 0, -10, -23]
-        let majorTicks: Set<Int> = [43, 20, 0, -23]
+        let ticks = [43, 30, 20, 10, 0, -10, -20]
+        let majorTicks: Set<Int> = [43, 20, 0, -20]
         return ZStack(alignment: .topLeading) {
             ForEach(ticks, id: \.self) { tick in
                 HStack(spacing: 6) {

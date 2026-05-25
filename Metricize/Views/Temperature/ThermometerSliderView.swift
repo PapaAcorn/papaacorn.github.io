@@ -10,6 +10,7 @@ struct ThermometerSliderView: View {
     var label: String?
     @Binding var selectedFahrenheit: Double
     let isEnabled: Bool
+    var layout: ChallengeLayout = .stacked
 
     @Environment(\.metricPalette) private var palette
 
@@ -20,21 +21,35 @@ struct ThermometerSliderView: View {
     }
 
     var body: some View {
-        VStack(spacing: 28) {
-            TemperaturePromptView(
-                value: celsius,
-                unit: "°C",
-                caption: label,
-                hint: "Drag the marker on the Fahrenheit scale"
-            )
-
-            HStack(alignment: .center, spacing: 28) {
-                thermometerTrack
-                fahrenheitReadout
+        Group {
+            switch layout {
+            case .stacked:
+                VStack(spacing: 28) {
+                    prompt
+                    sliderControls
+                }
+            case .sideBySide:
+                sliderControls
             }
-            .frame(maxHeight: 280)
         }
         .padding(.horizontal, 8)
+    }
+
+    private var prompt: some View {
+        TemperaturePromptView(
+            value: celsius,
+            unit: "°C",
+            caption: label,
+            hint: "Drag the marker on the Fahrenheit scale"
+        )
+    }
+
+    private var sliderControls: some View {
+        HStack(alignment: .center, spacing: 28) {
+            thermometerTrack
+            fahrenheitReadout
+        }
+        .frame(maxHeight: layout == .sideBySide ? 320 : 280)
     }
 
     private var thermometerTrack: some View {
@@ -159,8 +174,8 @@ struct ThermometerSliderView: View {
     }
 
     private func tickMarks(in height: CGFloat) -> some View {
-        let ticks = [110, 86, 68, 50, 32, 14, 0, -10]
-        let majorTicks: Set<Int> = [110, 68, 32, 0, -10]
+        let ticks = [110, 86, 68, 50, 32, 14, 0]
+        let majorTicks: Set<Int> = [110, 68, 32, 0]
         return ZStack(alignment: .topLeading) {
             ForEach(ticks, id: \.self) { tick in
                 HStack(spacing: 6) {

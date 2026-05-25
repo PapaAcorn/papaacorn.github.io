@@ -21,7 +21,7 @@ enum HowToUseContent {
         ),
         OnboardingPage(
             index: 3,
-            body: "Speaking of \"About\" — since this app is more about estimation than exact conversions, you don't even have to get the answers exactly right. Any answer within 3 degrees is close enough. We're just living day to day here — we're not in a laboratory."
+            body: "Speaking of \"About\" - since this app is about estimation rather than exact conversions, you don't even have to get the answers right. Close enough is good enough and each module will tell you how close you need to be. We're just living here, not working in a lab."
         ),
     ]
 }

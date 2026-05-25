@@ -62,7 +62,7 @@ struct TemperatureGameView: View {
         }
         .metricScreenBackground(celsius: activeCelsius)
         #if os(iOS)
-        .navigationTitle("Learn Inside/Outside")
+        .navigationTitle("Inside & Out")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         #endif
@@ -97,30 +97,35 @@ struct TemperatureGameView: View {
 
     @ViewBuilder
     private func challengeView(for card: TemperatureCard) -> some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 0)
+        GeometryReader { geometry in
+            let layout = ChallengeLayout.current(size: geometry.size)
 
-            VStack(spacing: 12) {
-                switch card.challengeType {
-                case .thermometerSlider:
-                    sliderChallenge(for: card)
-                case .multipleChoice:
-                    MultipleChoiceChallengeView(
-                        card: card,
-                        choices: multipleChoiceOptions,
-                        isEnabled: !viewModel.isSubmitting,
-                        onSelect: { guess in
-                            viewModel.submitMultipleChoice(guess: guess, for: card)
-                        }
-                    )
-                    .id(card.id)
-                    .padding(.horizontal, 20)
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+
+                VStack(spacing: 12) {
+                    switch card.challengeType {
+                    case .thermometerSlider:
+                        sliderChallenge(for: card, layout: layout)
+                    case .multipleChoice:
+                        MultipleChoiceChallengeView(
+                            card: card,
+                            choices: multipleChoiceOptions,
+                            isEnabled: !viewModel.isSubmitting,
+                            onSelect: { guess in
+                                viewModel.submitMultipleChoice(guess: guess, for: card)
+                            },
+                            layout: layout
+                        )
+                        .id(card.id)
+                        .padding(.horizontal, layout == .sideBySide ? 12 : 20)
+                    }
                 }
-            }
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity.combined(with: .scale(scale: 0.98)))
         .id(card.id)
         .onChange(of: card.id) { _, _ in
@@ -134,49 +139,109 @@ struct TemperatureGameView: View {
     }
 
     @ViewBuilder
-    private func sliderChallenge(for card: TemperatureCard) -> some View {
-        VStack(spacing: 20) {
-            switch card.direction {
-            case .celsiusToFahrenheit:
-                ThermometerSliderView(
-                    celsius: card.celsius,
-                    label: card.label,
-                    selectedFahrenheit: $sliderValueFahrenheit,
-                    isEnabled: !viewModel.isSubmitting
-                )
-                .id(card.id)
-
-                PrimaryActionButton(
-                    title: "Check",
-                    isEnabled: !viewModel.isSubmitting
-                ) {
-                    viewModel.submitSliderAnswer(
-                        guess: Int(sliderValueFahrenheit.rounded()),
-                        for: card
-                    )
-                }
-                .padding(.horizontal, 24)
-
-            case .fahrenheitToCelsius:
-                CelsiusSliderView(
-                    fahrenheit: card.promptValue,
-                    label: card.label,
-                    selectedCelsius: $sliderValueCelsius,
-                    isEnabled: !viewModel.isSubmitting
-                )
-                .id(card.id)
-
-                PrimaryActionButton(
-                    title: "Check",
-                    isEnabled: !viewModel.isSubmitting
-                ) {
-                    viewModel.submitSliderAnswer(
-                        guess: Int(sliderValueCelsius.rounded()),
-                        for: card
-                    )
-                }
-                .padding(.horizontal, 24)
+    private func sliderChallenge(for card: TemperatureCard, layout: ChallengeLayout) -> some View {
+        Group {
+            switch layout {
+            case .stacked:
+                stackedSliderChallenge(for: card, layout: layout)
+            case .sideBySide:
+                sideBySideSliderChallenge(for: card, layout: layout)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func stackedSliderChallenge(for card: TemperatureCard, layout: ChallengeLayout) -> some View {
+        VStack(spacing: 20) {
+            sliderView(for: card, layout: layout)
+
+            PrimaryActionButton(
+                title: "Check",
+                isEnabled: !viewModel.isSubmitting
+            ) {
+                submitSliderAnswer(for: card)
+            }
+            .padding(.horizontal, 24)
+        }
+    }
+
+    @ViewBuilder
+    private func sideBySideSliderChallenge(for card: TemperatureCard, layout: ChallengeLayout) -> some View {
+        HStack(alignment: .center, spacing: 24) {
+            sliderPrompt(for: card)
+                .frame(maxWidth: .infinity)
+
+            VStack(spacing: 20) {
+                sliderView(for: card, layout: .sideBySide)
+
+                PrimaryActionButton(
+                    title: "Check",
+                    isEnabled: !viewModel.isSubmitting
+                ) {
+                    submitSliderAnswer(for: card)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, 20)
+    }
+
+    @ViewBuilder
+    private func sliderPrompt(for card: TemperatureCard) -> some View {
+        switch card.direction {
+        case .celsiusToFahrenheit:
+            TemperaturePromptView(
+                value: card.celsius,
+                unit: "°C",
+                caption: card.label,
+                hint: "Drag the marker on the Fahrenheit scale"
+            )
+        case .fahrenheitToCelsius:
+            TemperaturePromptView(
+                value: card.promptValue,
+                unit: "°F",
+                caption: card.label,
+                hint: "Drag the marker on the Celsius scale"
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func sliderView(for card: TemperatureCard, layout: ChallengeLayout) -> some View {
+        switch card.direction {
+        case .celsiusToFahrenheit:
+            ThermometerSliderView(
+                celsius: card.celsius,
+                label: card.label,
+                selectedFahrenheit: $sliderValueFahrenheit,
+                isEnabled: !viewModel.isSubmitting,
+                layout: layout
+            )
+            .id(card.id)
+        case .fahrenheitToCelsius:
+            CelsiusSliderView(
+                fahrenheit: card.promptValue,
+                label: card.label,
+                selectedCelsius: $sliderValueCelsius,
+                isEnabled: !viewModel.isSubmitting,
+                layout: layout
+            )
+            .id(card.id)
+        }
+    }
+
+    private func submitSliderAnswer(for card: TemperatureCard) {
+        switch card.direction {
+        case .celsiusToFahrenheit:
+            viewModel.submitSliderAnswer(
+                guess: Int(sliderValueFahrenheit.rounded()),
+                for: card
+            )
+        case .fahrenheitToCelsius:
+            viewModel.submitSliderAnswer(
+                guess: Int(sliderValueCelsius.rounded()),
+                for: card
+            )
         }
     }
 
