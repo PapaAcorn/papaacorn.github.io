@@ -22,23 +22,7 @@ struct AmbientBackgroundView: View {
         ZStack {
             palette.ink
 
-            Circle()
-                .fill(temperaturePalette.primary.opacity(0.35))
-                .frame(width: 340, height: 340)
-                .blur(radius: 80)
-                .offset(x: drift ? -40 : 40, y: drift ? -120 : -80)
-
-            Circle()
-                .fill(temperaturePalette.glow.opacity(0.22))
-                .frame(width: 280, height: 280)
-                .blur(radius: 70)
-                .offset(x: drift ? 80 : -60, y: drift ? 200 : 160)
-
-            Circle()
-                .fill(temperaturePalette.secondary.opacity(0.18))
-                .frame(width: 420, height: 420)
-                .blur(radius: 90)
-                .offset(x: drift ? 20 : -20, y: drift ? 40 : 80)
+            ambientOrbs
 
             LinearGradient(
                 colors: [palette.grainTop, .clear, palette.grainBottom],
@@ -46,8 +30,34 @@ struct AmbientBackgroundView: View {
                 endPoint: .bottom
             )
         }
-        .animation(.easeInOut(duration: 8).repeatForever(autoreverses: true), value: drift)
-        .onAppear { drift = true }
+        .onAppear {
+            drift = true
+        }
+    }
+
+    private var ambientOrbs: some View {
+        ZStack {
+            Circle()
+                .fill(temperaturePalette.primary.opacity(0.35))
+                .frame(width: 340, height: 340)
+                .blur(radius: 80)
+                .offset(x: drift ? -40 : 40, y: drift ? -120 : -80)
+                .animation(.easeInOut(duration: 8).repeatForever(autoreverses: true), value: drift)
+
+            Circle()
+                .fill(temperaturePalette.glow.opacity(0.22))
+                .frame(width: 280, height: 280)
+                .blur(radius: 70)
+                .offset(x: drift ? 80 : -60, y: drift ? 200 : 160)
+                .animation(.easeInOut(duration: 8).repeatForever(autoreverses: true), value: drift)
+
+            Circle()
+                .fill(temperaturePalette.secondary.opacity(0.18))
+                .frame(width: 420, height: 420)
+                .blur(radius: 90)
+                .offset(x: drift ? 20 : -20, y: drift ? 40 : 80)
+                .animation(.easeInOut(duration: 8).repeatForever(autoreverses: true), value: drift)
+        }
         .animation(.easeInOut(duration: 0.8), value: celsius)
     }
 }

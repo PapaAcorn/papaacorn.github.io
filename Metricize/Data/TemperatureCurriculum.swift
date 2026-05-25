@@ -19,7 +19,7 @@ enum TemperatureCurriculum {
                     "Freezing point of water",
                     "Standard indoor room temperature",
                     "Standard human body temperature",
-                    "Cool spring or fall day (~\(TemperatureFormatting.symbol(fahrenheit: 50)))",
+                    "Cool spring or fall day",
                     "Warm afternoon",
                 ]
             )

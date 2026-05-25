@@ -13,11 +13,12 @@ enum InsideOutsideBasicsContent {
         ),
         OnboardingPage(
             index: 1,
-            body: "In fact, out of nearly 200 countries in the world, there are 6 that still use Fahrenheit."
+            body: "In fact, out of nearly 200 countries in the world, there are 6 that still use Fahrenheit.",
+            delayedFollowUp: "Only 6."
         ),
         OnboardingPage(
             index: 2,
-            title: "Fahrenheit milestones you may know",
+            title: "Milestones",
             body: "You probably already know some key milestones in Fahrenheit.",
             bulletItems: [
                 "\(TemperatureFormatting.symbol(fahrenheit: 212)) = boiling point of water",
@@ -36,16 +37,22 @@ enum InsideOutsideBasicsContent {
         ),
         OnboardingPage(
             index: 5,
-            title: "Two more to learn",
-            body: "Celsius is easy to grasp and learn — you have already learned 2 of the key milestones, 0 and 100. Here are two more: Standard room temperature (\(TemperatureFormatting.symbol(fahrenheit: 68))) is \(TemperatureFormatting.symbol(celsius: 20)). Human body temp (98.6°F) is \(TemperatureFormatting.symbol(celsius: 37))."
+            title: "Celsius is Easy",
+            body: "Celsius is easy to grasp and learn — you have already learned 2 of the key milestones, 0 and 100."
         ),
         OnboardingPage(
             index: 6,
-            body: "This module will cover milestones like these as well as temperatures you'll encounter inside and outside. Ambient temperatures. We're not talking about baking here — we mean common air temperatures between \(TemperatureFormatting.symbol(fahrenheit: -10)) and \(TemperatureFormatting.symbol(fahrenheit: 110))."
+            body: "This module will cover milestones like those as well as temperatures you'll encounter inside and outside. Ambient temperatures. We're not talking about baking here — we mean common air temperatures between \(TemperatureFormatting.symbol(fahrenheit: -10)) and \(TemperatureFormatting.symbol(fahrenheit: 110))."
         ),
         OnboardingPage(
             index: 7,
-            body: "You'll be learning 5 temps at a time. Just memorize them. You don't need to be doing math in your head."
+            body: "You'll be learning 5 temps at a time in 4 rounds. Each round has 3 sub-rounds.",
+            bodyAfterBullets: "Your goal is to memorize, not math. Don't bother trying to convert. You don't need to be doing math in your head.",
+            bulletItems: [
+                "Celsius to Fahrenheit.",
+                "Fahrenheit to Celsius.",
+                "Both.",
+            ]
         ),
         OnboardingPage(
             index: 8,
@@ -53,7 +60,7 @@ enum InsideOutsideBasicsContent {
         ),
         OnboardingPage(
             index: 9,
-            body: "You only need to be within 3 degrees of the exact conversion to get a question right."
+            body: "You only need to be within 3 degrees of the exact answer to get the question right."
         ),
     ]
 }

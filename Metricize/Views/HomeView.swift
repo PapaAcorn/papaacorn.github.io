@@ -10,6 +10,7 @@ struct HomeView: View {
 
     @State private var temperatureProgress = TemperatureProgressStore()
     @State private var unlockStore = ModuleUnlockStore()
+    @State private var launchLearnModule = false
 
     var body: some View {
         NavigationStack {
@@ -48,6 +49,9 @@ struct HomeView: View {
                 }
             }
             #endif
+            .navigationDestination(isPresented: $launchLearnModule) {
+                TemperatureGameView(progressStore: temperatureProgress)
+            }
         }
     }
 
@@ -178,7 +182,8 @@ struct HomeView: View {
                 module: .insideOutsideBasics,
                 pages: InsideOutsideBasicsContent.pages,
                 unlockStore: unlockStore,
-                finalButtonTitle: "Get Started"
+                finalButtonTitle: "Start Learning",
+                onComplete: { launchLearnModule = true }
             )
         case .learnInsideOutside:
             TemperatureGameView(progressStore: temperatureProgress)
@@ -391,5 +396,5 @@ private struct ModulePreviewCard: View {
 #Preview {
     HomeView()
         .environment(AppSettingsStore())
-        .modifier(MetricPaletteProvider())
+        .environment(\.metricPalette, MetricPalette.dark)
 }

@@ -168,14 +168,6 @@ extension EnvironmentValues {
     }
 }
 
-struct MetricPaletteProvider: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-
-    func body(content: Content) -> some View {
-        content.environment(\.metricPalette, MetricPalette.forScheme(colorScheme))
-    }
-}
-
 // MARK: - View modifiers
 
 struct GlassCardModifier: ViewModifier {

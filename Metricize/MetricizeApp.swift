@@ -13,10 +13,23 @@ struct MetricizeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(settings)
-                .modifier(MetricPaletteProvider())
-                .preferredColorScheme(settings.preferredColorScheme)
+            RootView(settings: settings)
         }
+    }
+}
+
+private struct RootView: View {
+    let settings: AppSettingsStore
+    @Environment(\.colorScheme) private var systemColorScheme
+
+    private var activeColorScheme: ColorScheme {
+        settings.appearanceMode.preferredColorScheme ?? systemColorScheme
+    }
+
+    var body: some View {
+        ContentView()
+            .environment(settings)
+            .environment(\.metricPalette, MetricPalette.forScheme(activeColorScheme))
+            .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
     }
 }

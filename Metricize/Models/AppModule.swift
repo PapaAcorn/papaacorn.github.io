@@ -49,12 +49,26 @@ struct OnboardingPage: Identifiable {
     let id: Int
     let title: String?
     let body: String
+    let bodyAfterBullets: String?
     let bulletItems: [String]
+    let delayedFollowUp: String?
+    let followUpDelay: TimeInterval
 
-    init(index: Int, title: String? = nil, body: String, bulletItems: [String] = []) {
+    init(
+        index: Int,
+        title: String? = nil,
+        body: String,
+        bodyAfterBullets: String? = nil,
+        bulletItems: [String] = [],
+        delayedFollowUp: String? = nil,
+        followUpDelay: TimeInterval = 1.0
+    ) {
         self.id = index
         self.title = title
         self.body = body
+        self.bodyAfterBullets = bodyAfterBullets
         self.bulletItems = bulletItems
+        self.delayedFollowUp = delayedFollowUp
+        self.followUpDelay = followUpDelay
     }
 }

@@ -9,7 +9,7 @@ enum HowToUseContent {
     static let pages: [OnboardingPage] = [
         OnboardingPage(
             index: 0,
-            body: "This app is not a conversion calculator. Siri can do that for you. This app is to help you build a mental model so that you know what a temperature in Celsius actually means."
+            body: "This app is not just a conversion calculator. It is designed to help you build a mental model so that you know what Metric actually means."
         ),
         OnboardingPage(
             index: 1,

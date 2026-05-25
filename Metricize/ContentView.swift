@@ -14,5 +14,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environment(AppSettingsStore())
-        .modifier(MetricPaletteProvider())
+        .environment(\.metricPalette, MetricPalette.dark)
 }
