@@ -202,11 +202,7 @@ struct TemperaturePromptView: View {
 
 enum AnswerFormatting {
     static func degreesPhrase(value: Int, unit: String) -> String {
-        switch unit {
-        case "°F": "\(value) degrees Fahrenheit"
-        case "°C": "\(value) degrees Celsius"
-        default: "\(value)\(unit)"
-        }
+        TemperatureFormatting.degreesPhrase(value: value, unit: unit)
     }
 }
 
@@ -259,27 +255,26 @@ struct PrimaryActionButton: View {
 }
 
 struct RoundProgressHeader: View {
-    let roundNumber: Int
-    let totalRounds: Int
-    let learnedConversions: Int
-    let totalConversions: Int
+    let roundLabel: String
+    let learned: Int
+    let total: Int
 
     private var progress: Double {
-        guard totalConversions > 0 else { return 0 }
-        return Double(learnedConversions) / Double(totalConversions)
+        guard total > 0 else { return 0 }
+        return Double(learned) / Double(total)
     }
 
     var body: some View {
         VStack(spacing: 14) {
             HStack(alignment: .center) {
-                Text("Round \(roundNumber) of \(totalRounds)")
+                Text(roundLabel)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(MetricTheme.textPrimary)
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 6) {
-                    Text("Conversions Learned")
+                VStack(spacing: 8) {
+                    Text("Learned")
                         .font(.caption2.weight(.semibold))
                         .tracking(0.6)
                         .foregroundStyle(MetricTheme.textTertiary)
@@ -299,7 +294,7 @@ struct RoundProgressHeader: View {
                             .rotationEffect(.degrees(-90))
                             .animation(.spring(response: 0.5), value: progress)
 
-                        Text("\(learnedConversions)/\(totalConversions)")
+                        Text("\(learned)/\(total)")
                             .font(.caption2.weight(.bold).monospacedDigit())
                             .foregroundStyle(MetricTheme.textSecondary)
                     }

@@ -67,12 +67,58 @@ struct HomeView: View {
                 )
             }
 
-            moduleLink(for: .learnInsideOutside) {
+            learnModuleRow
+        }
+    }
+
+    @ViewBuilder
+    private var learnModuleRow: some View {
+        HStack(spacing: 12) {
+            if unlockStore.isUnlocked(.learnInsideOutside) {
+                NavigationLink {
+                    TemperatureGameView(progressStore: temperatureProgress)
+                } label: {
+                    LearnModuleCard(
+                        isUnlocked: true,
+                        roundLabel: TemperatureCurriculum.subRoundLabel(
+                            majorRoundIndex: temperatureProgress.currentRoundIndex,
+                            subRoundIndex: temperatureProgress.currentSubRoundIndex
+                        ),
+                        learned: temperatureProgress.learnedCountInCurrentSubRound(),
+                        total: temperatureProgress.totalCountInCurrentSubRound(),
+                        hasProgress: !temperatureProgress.progressByCardID.isEmpty
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    temperatureProgress.resetProgress()
+                } label: {
+                    Text("Reset")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(MetricTheme.textSecondary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background {
+                            Capsule(style: .continuous)
+                                .fill(Color.white.opacity(0.08))
+                                .overlay {
+                                    Capsule(style: .continuous)
+                                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                                }
+                        }
+                }
+                .buttonStyle(.plain)
+            } else {
                 LearnModuleCard(
-                    progressStore: temperatureProgress,
-                    isUnlocked: unlockStore.isUnlocked(.learnInsideOutside),
-                    isComplete: false
+                    isUnlocked: false,
+                    roundLabel: "1.1",
+                    learned: 0,
+                    total: 5,
+                    hasProgress: false
                 )
+                .opacity(0.45)
+                .allowsHitTesting(false)
             }
         }
     }
@@ -193,21 +239,11 @@ private struct ModuleCard: View {
 }
 
 private struct LearnModuleCard: View {
-    let progressStore: TemperatureProgressStore
     let isUnlocked: Bool
-    let isComplete: Bool
-
-    private var learned: Int {
-        progressStore.learnedConversionCount(in: progressStore.currentRoundIndex)
-    }
-
-    private var totalConversions: Int {
-        progressStore.anchorCount(in: progressStore.currentRoundIndex)
-    }
-
-    private var hasProgress: Bool {
-        !progressStore.progressByCardID.isEmpty
-    }
+    let roundLabel: String
+    let learned: Int
+    let total: Int
+    let hasProgress: Bool
 
     var body: some View {
         HStack(spacing: 16) {
@@ -238,7 +274,7 @@ private struct LearnModuleCard: View {
                         .font(.caption)
                         .foregroundStyle(MetricTheme.textTertiary)
                 } else if hasProgress {
-                    Text("Round \(progressStore.currentRoundIndex + 1) · \(learned)/\(totalConversions) conversions")
+                    Text("Round \(roundLabel) · \(learned)/\(total) learned")
                         .font(.caption)
                         .foregroundStyle(MetricTheme.textSecondary)
                 } else {
@@ -261,6 +297,7 @@ private struct LearnModuleCard: View {
             }
         }
         .padding(20)
+        .frame(maxWidth: .infinity)
         .background {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(

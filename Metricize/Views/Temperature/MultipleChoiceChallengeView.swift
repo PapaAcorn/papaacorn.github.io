@@ -15,8 +15,10 @@ struct MultipleChoiceChallengeView: View {
 
     private var hint: String {
         switch card.direction {
-        case .celsiusToFahrenheit: "is about how many °F?"
-        case .fahrenheitToCelsius: "is about how many °C?"
+        case .celsiusToFahrenheit:
+            "is about how many \(card.answerUnit)?"
+        case .fahrenheitToCelsius:
+            "is about how many \(card.answerUnit)?"
         }
     }
 

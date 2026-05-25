@@ -23,14 +23,21 @@ struct TemperatureGameView: View {
         return nil
     }
 
+    private var roundLabel: String {
+        let major = progressStore.currentRoundIndex
+        let minor = progressStore.currentSubRoundIndex
+        let totalMajor = TemperatureCurriculum.rounds.count
+        let totalMinor = TemperatureGameConstants.subRoundsPerRound
+        return "Round \(TemperatureCurriculum.subRoundLabel(majorRoundIndex: major, subRoundIndex: minor)) of \(totalMajor).\(totalMinor)"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if !isFullScreenPhase {
                 RoundProgressHeader(
-                    roundNumber: progressStore.currentRoundIndex + 1,
-                    totalRounds: TemperatureCurriculum.rounds.count,
-                    learnedConversions: progressStore.learnedConversionCount(in: progressStore.currentRoundIndex),
-                    totalConversions: progressStore.anchorCount(in: progressStore.currentRoundIndex)
+                    roundLabel: roundLabel,
+                    learned: progressStore.learnedCountInCurrentSubRound(),
+                    total: progressStore.totalCountInCurrentSubRound()
                 )
             }
 
@@ -40,7 +47,7 @@ struct TemperatureGameView: View {
                     challengeView(for: card)
                 case .showingTip(let roundIndex, let tips):
                     RoundTipView(
-                        roundTitle: TemperatureCurriculum.rounds[roundIndex].title,
+                        roundTitle: "Round \(roundIndex + 1)",
                         tips: tips,
                         onContinue: viewModel.dismissTipAndContinue
                     )
@@ -89,16 +96,7 @@ struct TemperatureGameView: View {
 
     @ViewBuilder
     private func challengeView(for card: TemperatureCard) -> some View {
-        VStack(spacing: 0) {
-            LearningStreakView(
-                consecutiveCorrect: progressStore.progress(for: card).consecutiveCorrect,
-                required: TemperatureGameConstants.requiredConsecutiveCorrect
-            )
-            .padding(.top, 20)
-            .padding(.bottom, 8)
-
-            Spacer(minLength: 0)
-
+        VStack(spacing: 12) {
             switch card.challengeType {
             case .thermometerSlider:
                 sliderChallenge(for: card)
@@ -113,11 +111,11 @@ struct TemperatureGameView: View {
                 )
                 .id(card.id)
                 .padding(.horizontal, 20)
-                .padding(.bottom, 32)
             }
-
-            Spacer(minLength: 0)
         }
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .transition(.opacity.combined(with: .scale(scale: 0.98)))
         .id(card.id)
         .onChange(of: card.id) { _, _ in
@@ -132,46 +130,46 @@ struct TemperatureGameView: View {
 
     @ViewBuilder
     private func sliderChallenge(for card: TemperatureCard) -> some View {
-        switch card.direction {
-        case .celsiusToFahrenheit:
-            ThermometerSliderView(
-                celsius: card.celsius,
-                selectedFahrenheit: $sliderValueFahrenheit,
-                isEnabled: !viewModel.isSubmitting
-            )
-            .id(card.id)
-
-            PrimaryActionButton(
-                title: "Check",
-                isEnabled: !viewModel.isSubmitting
-            ) {
-                viewModel.submitSliderAnswer(
-                    guess: Int(sliderValueFahrenheit.rounded()),
-                    for: card
+        VStack(spacing: 20) {
+            switch card.direction {
+            case .celsiusToFahrenheit:
+                ThermometerSliderView(
+                    celsius: card.celsius,
+                    selectedFahrenheit: $sliderValueFahrenheit,
+                    isEnabled: !viewModel.isSubmitting
                 )
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 28)
+                .id(card.id)
 
-        case .fahrenheitToCelsius:
-            CelsiusSliderView(
-                fahrenheit: card.promptValue,
-                selectedCelsius: $sliderValueCelsius,
-                isEnabled: !viewModel.isSubmitting
-            )
-            .id(card.id)
+                PrimaryActionButton(
+                    title: "Check",
+                    isEnabled: !viewModel.isSubmitting
+                ) {
+                    viewModel.submitSliderAnswer(
+                        guess: Int(sliderValueFahrenheit.rounded()),
+                        for: card
+                    )
+                }
+                .padding(.horizontal, 24)
 
-            PrimaryActionButton(
-                title: "Check",
-                isEnabled: !viewModel.isSubmitting
-            ) {
-                viewModel.submitSliderAnswer(
-                    guess: Int(sliderValueCelsius.rounded()),
-                    for: card
+            case .fahrenheitToCelsius:
+                CelsiusSliderView(
+                    fahrenheit: card.promptValue,
+                    selectedCelsius: $sliderValueCelsius,
+                    isEnabled: !viewModel.isSubmitting
                 )
+                .id(card.id)
+
+                PrimaryActionButton(
+                    title: "Check",
+                    isEnabled: !viewModel.isSubmitting
+                ) {
+                    viewModel.submitSliderAnswer(
+                        guess: Int(sliderValueCelsius.rounded()),
+                        for: card
+                    )
+                }
+                .padding(.horizontal, 24)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 28)
         }
     }
 
@@ -261,7 +259,7 @@ struct TemperatureGameView: View {
                 .font(.largeTitle.weight(.bold))
                 .foregroundStyle(MetricTheme.textPrimary)
 
-            Text("You can now approximate everyday temperatures in both directions — within 3 degrees, from memory.")
+            Text("You can now approximate everyday temperatures in both directions — within 3°, from memory.")
                 .font(.body)
                 .foregroundStyle(MetricTheme.textSecondary)
                 .multilineTextAlignment(.center)

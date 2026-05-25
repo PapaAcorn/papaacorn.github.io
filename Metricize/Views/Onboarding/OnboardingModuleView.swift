@@ -75,7 +75,7 @@ struct OnboardingModuleView: View {
         return ScrollView {
             VStack(alignment: .leading, spacing: paragraphSpacing) {
                 if let title = page.title {
-                    Text(title)
+                    Text(title.withDecimalLineBreakProtection)
                         .font(.system(size: titleSize, weight: .semibold, design: .rounded))
                         .foregroundStyle(MetricTheme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -97,7 +97,7 @@ struct OnboardingModuleView: View {
                                 Text("•")
                                     .font(.system(size: bodySize, weight: .semibold))
                                     .foregroundStyle(MetricTheme.warmGlow)
-                                Text(item)
+                                Text(item.withDecimalLineBreakProtection)
                                     .font(.system(size: bodySize * 0.92, weight: .regular, design: .rounded))
                                     .foregroundStyle(MetricTheme.textSecondary)
                                     .lineSpacing(bodySize * 0.15)
@@ -131,21 +131,31 @@ private enum OnboardingText {
     static func sentences(in text: String) -> [String] {
         var sentences: [String] = []
         var current = ""
+        let characters = Array(text)
 
-        for character in text {
+        for index in characters.indices {
+            let character = characters[index]
             current.append(character)
+
             if ".!?".contains(character) {
-                let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmed.isEmpty {
-                    sentences.append(trimmed)
+                let isDecimalPoint = character == "."
+                    && index > 0
+                    && characters[index - 1].isNumber
+                    && index + 1 < characters.count
+                    && characters[index + 1].isNumber
+                if !isDecimalPoint {
+                    let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmed.isEmpty {
+                        sentences.append(trimmed.withDecimalLineBreakProtection)
+                    }
+                    current = ""
                 }
-                current = ""
             }
         }
 
         let remainder = current.trimmingCharacters(in: .whitespacesAndNewlines)
         if !remainder.isEmpty {
-            sentences.append(remainder)
+            sentences.append(remainder.withDecimalLineBreakProtection)
         }
 
         return sentences

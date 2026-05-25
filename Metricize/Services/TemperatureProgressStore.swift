@@ -10,10 +10,12 @@ final class TemperatureProgressStore {
     private let storageKey = "metricize.temperature.progress"
     private(set) var progressByCardID: [String: CardProgress] = [:]
     private(set) var currentRoundIndex: Int = 0
+    private(set) var currentSubRoundIndex: Int = 0
     private(set) var hasSeenTipForRound: Set<Int> = []
 
     init() {
         load()
+        normalizePosition()
     }
 
     func progress(for card: TemperatureCard) -> CardProgress {
@@ -33,29 +35,41 @@ final class TemperatureProgressStore {
         save()
     }
 
-    func isRoundComplete(_ roundIndex: Int) -> Bool {
-        let cards = TemperatureCurriculum.cards(forRound: roundIndex)
+    func currentSubRoundCards() -> [TemperatureCard] {
+        TemperatureCurriculum.cards(forRound: currentRoundIndex, subRoundIndex: currentSubRoundIndex)
+    }
+
+    func isSubRoundComplete(_ roundIndex: Int, subRoundIndex: Int) -> Bool {
+        let cards = TemperatureCurriculum.cards(forRound: roundIndex, subRoundIndex: subRoundIndex)
         guard !cards.isEmpty else { return false }
         return cards.allSatisfy { progress(for: $0).isLearned }
     }
 
-    func learnedCardCount(in roundIndex: Int) -> Int {
-        TemperatureCurriculum.cards(forRound: roundIndex)
-            .filter { progress(for: $0).isLearned }
-            .count
+    func isRoundComplete(_ roundIndex: Int) -> Bool {
+        (0..<TemperatureGameConstants.subRoundsPerRound).allSatisfy {
+            isSubRoundComplete(roundIndex, subRoundIndex: $0)
+        }
     }
 
-    /// A conversion is learned when both C→F and F→C cards for the same anchor are learned.
-    func learnedConversionCount(in roundIndex: Int) -> Int {
-        let cards = TemperatureCurriculum.cards(forRound: roundIndex)
-        let anchors = Set(cards.map(\.celsius))
-        return anchors.filter { anchor in
-            cards.filter { $0.celsius == anchor }.allSatisfy { progress(for: $0).isLearned }
-        }.count
+    func learnedCountInCurrentSubRound() -> Int {
+        currentSubRoundCards().filter { progress(for: $0).isLearned }.count
+    }
+
+    func totalCountInCurrentSubRound() -> Int {
+        currentSubRoundCards().count
     }
 
     func anchorCount(in roundIndex: Int) -> Int {
         TemperatureCurriculum.rounds.first(where: { $0.index == roundIndex })?.anchorCount ?? 5
+    }
+
+    @discardableResult
+    func advanceSubRoundIfNeeded() -> Bool {
+        guard isSubRoundComplete(currentRoundIndex, subRoundIndex: currentSubRoundIndex) else { return false }
+        guard currentSubRoundIndex < TemperatureGameConstants.subRoundsPerRound - 1 else { return false }
+        currentSubRoundIndex += 1
+        save()
+        return true
     }
 
     func advanceToNextRoundIfNeeded() {
@@ -63,8 +77,23 @@ final class TemperatureProgressStore {
         let nextIndex = currentRoundIndex + 1
         if nextIndex < TemperatureCurriculum.rounds.count {
             currentRoundIndex = nextIndex
+            currentSubRoundIndex = 0
             save()
         }
+    }
+
+    func normalizePosition() {
+        while isSubRoundComplete(currentRoundIndex, subRoundIndex: currentSubRoundIndex) {
+            if currentSubRoundIndex < TemperatureGameConstants.subRoundsPerRound - 1 {
+                currentSubRoundIndex += 1
+            } else if currentRoundIndex < TemperatureCurriculum.rounds.count - 1 {
+                currentRoundIndex += 1
+                currentSubRoundIndex = 0
+            } else {
+                break
+            }
+        }
+        save()
     }
 
     func markTipSeen(forRound roundIndex: Int) {
@@ -88,6 +117,7 @@ final class TemperatureProgressStore {
     func resetProgress() {
         progressByCardID = [:]
         currentRoundIndex = 0
+        currentSubRoundIndex = 0
         hasSeenTipForRound = []
         save()
     }
@@ -95,6 +125,7 @@ final class TemperatureProgressStore {
     private struct PersistedState: Codable {
         var progressByCardID: [String: CardProgress]
         var currentRoundIndex: Int
+        var currentSubRoundIndex: Int?
         var hasSeenTipForRound: [Int]
     }
 
@@ -106,6 +137,7 @@ final class TemperatureProgressStore {
 
         progressByCardID = state.progressByCardID
         currentRoundIndex = state.currentRoundIndex
+        currentSubRoundIndex = state.currentSubRoundIndex ?? 0
         hasSeenTipForRound = Set(state.hasSeenTipForRound)
     }
 
@@ -113,6 +145,7 @@ final class TemperatureProgressStore {
         let state = PersistedState(
             progressByCardID: progressByCardID,
             currentRoundIndex: currentRoundIndex,
+            currentSubRoundIndex: currentSubRoundIndex,
             hasSeenTipForRound: Array(hasSeenTipForRound)
         )
         if let data = try? JSONEncoder().encode(state) {

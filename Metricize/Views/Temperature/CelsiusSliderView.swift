@@ -28,7 +28,7 @@ struct CelsiusSliderView: View {
                 celsiusTrack
                 celsiusReadout
             }
-            .frame(maxHeight: 340)
+            .frame(maxHeight: 280)
         }
         .padding(.horizontal, 8)
     }
@@ -94,7 +94,7 @@ struct CelsiusSliderView: View {
                     )
                     .frame(width: 64, height: 64)
                     .shadow(color: guessHue.opacity(0.5), radius: 12)
-                    .position(x: geometry.size.width / 2, y: height - 20)
+                    .position(x: geometry.size.width / 2, y: height - 28)
 
                 ZStack {
                     Circle()

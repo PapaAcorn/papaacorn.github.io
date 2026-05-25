@@ -20,15 +20,15 @@ enum InsideOutsideBasicsContent {
             title: "Fahrenheit milestones you may know",
             body: "You probably already know some key milestones in Fahrenheit.",
             bulletItems: [
-                "212 = boiling point of water",
-                "32 = freezing point of water",
-                "68 = standard indoor room temperature",
-                "98.6 = standard human body temperature",
+                "\(TemperatureFormatting.symbol(fahrenheit: 212)) = boiling point of water",
+                "\(TemperatureFormatting.symbol(fahrenheit: 32)) = freezing point of water",
+                "\(TemperatureFormatting.symbol(fahrenheit: 68)) = standard indoor room temperature",
+                "98.6°F = standard human body temperature",
             ]
         ),
         OnboardingPage(
             index: 3,
-            body: "Celsius is based around two of those milestones. 0°C is the freezing point of water. 100°C is the boiling point of water."
+            body: "Celsius is based around two of those milestones. \(TemperatureFormatting.symbol(celsius: 0)) is the freezing point of water. \(TemperatureFormatting.symbol(celsius: 100)) is the boiling point of water."
         ),
         OnboardingPage(
             index: 4,
@@ -37,11 +37,11 @@ enum InsideOutsideBasicsContent {
         OnboardingPage(
             index: 5,
             title: "Two more to learn",
-            body: "Celsius is easy to grasp and learn — you have already learned 2 of the key milestones, 0 and 100. Here are two more: Standard room temperature (68°F) is 20°C. Human body temp (98.6°F) is 37°C."
+            body: "Celsius is easy to grasp and learn — you have already learned 2 of the key milestones, 0 and 100. Here are two more: Standard room temperature (\(TemperatureFormatting.symbol(fahrenheit: 68))) is \(TemperatureFormatting.symbol(celsius: 20)). Human body temp (98.6°F) is \(TemperatureFormatting.symbol(celsius: 37))."
         ),
         OnboardingPage(
             index: 6,
-            body: "This module will cover milestones like these as well as temperatures you'll encounter inside and outside. Ambient temperatures. We're not talking about baking here — we mean common air temperatures between -10°F and 110°F."
+            body: "This module will cover milestones like these as well as temperatures you'll encounter inside and outside. Ambient temperatures. We're not talking about baking here — we mean common air temperatures between \(TemperatureFormatting.symbol(fahrenheit: -10)) and \(TemperatureFormatting.symbol(fahrenheit: 110))."
         ),
         OnboardingPage(
             index: 7,

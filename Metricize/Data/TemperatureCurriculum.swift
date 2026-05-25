@@ -19,7 +19,7 @@ enum TemperatureCurriculum {
                     "Freezing point of water",
                     "Standard indoor room temperature",
                     "Standard human body temperature",
-                    "Cool spring or fall day (~50°F)",
+                    "Cool spring or fall day (~\(TemperatureFormatting.symbol(fahrenheit: 50)))",
                     "Warm afternoon",
                 ]
             )
@@ -50,7 +50,7 @@ enum TemperatureCurriculum {
                     "Just below freezing",
                     "Warm summer evening",
                     "Near the upper environmental limit",
-                    "Extreme heat (~110°F)",
+                    "Extreme heat (~\(TemperatureFormatting.symbol(fahrenheit: 110)))",
                 ]
             )
         ),
@@ -65,7 +65,7 @@ enum TemperatureCurriculum {
                     "Pleasant spring day",
                     "Hot summer midday",
                     "Frigid but survivable outdoors",
-                    "Very hot summer day (~100°F)",
+                    "Very hot summer day (~\(TemperatureFormatting.symbol(fahrenheit: 100)))",
                 ]
             )
         ),
@@ -103,6 +103,22 @@ enum TemperatureCurriculum {
 
     static func cards(forRound index: Int) -> [TemperatureCard] {
         rounds.first(where: { $0.index == index })?.cards ?? []
+    }
+
+    static func cards(forRound roundIndex: Int, subRoundIndex: Int) -> [TemperatureCard] {
+        let all = cards(forRound: roundIndex)
+        switch subRoundIndex {
+        case 0:
+            return all.filter { $0.direction == .celsiusToFahrenheit }
+        case 1:
+            return all.filter { $0.direction == .fahrenheitToCelsius }
+        default:
+            return all
+        }
+    }
+
+    static func subRoundLabel(majorRoundIndex: Int, subRoundIndex: Int) -> String {
+        "\(majorRoundIndex + 1).\(subRoundIndex + 1)"
     }
 
     private static func cards(

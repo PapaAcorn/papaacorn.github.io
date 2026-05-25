@@ -13,7 +13,7 @@ enum HowToUseContent {
         ),
         OnboardingPage(
             index: 1,
-            body: "If a friend says \"It's about 90 degrees outside\" you, as a user of Fahrenheit, understand it's time for summer clothes. But what if a friend tells you it's 15 degrees C? Do you have a sense of what that means? Is it time to bring out the winter coat? Or is it just a chilly day?"
+            body: "If a friend says \"It's about 90°F outside\" you, as a user of Fahrenheit, understand it's time for summer clothes. But what if a friend tells you it's 15°C? Do you have a sense of what that means? Is it time to bring out the winter coat? Or is it just a chilly day?"
         ),
         OnboardingPage(
             index: 2,

@@ -39,27 +39,26 @@ final class TemperatureGameViewModel {
         TemperatureCurriculum.rounds[progressStore.currentRoundIndex]
     }
 
-    var roundProgressText: String {
-        let learned = progressStore.learnedConversionCount(in: progressStore.currentRoundIndex)
-        let total = progressStore.anchorCount(in: progressStore.currentRoundIndex)
-        return "\(learned)/\(total) conversions learned"
-    }
-
     func resumeFromSavedState() {
         lastCardID = nil
+        progressStore.normalizePosition()
 
         if progressStore.isModuleComplete {
             phase = .moduleComplete
             return
         }
 
-        if progressStore.shouldShowTipBeforeRound(progressStore.currentRoundIndex) {
+        if progressStore.shouldShowTipBeforeRound(progressStore.currentRoundIndex)
+            && progressStore.currentSubRoundIndex == 0 {
             showTip(for: progressStore.currentRoundIndex)
             return
         }
 
-        if progressStore.isRoundComplete(progressStore.currentRoundIndex) {
-            handleRoundCompletion(for: progressStore.currentRoundIndex)
+        if progressStore.isSubRoundComplete(
+            progressStore.currentRoundIndex,
+            subRoundIndex: progressStore.currentSubRoundIndex
+        ) {
+            advanceFromCompletedSubRound()
             return
         }
 
@@ -123,12 +122,32 @@ final class TemperatureGameViewModel {
             try? await Task.sleep(for: .milliseconds(isCorrect ? 900 : 1600))
             feedback = .none
             isSubmitting = false
+            continueAfterAnswer(for: card)
+        }
+    }
 
-            if progressStore.isRoundComplete(card.roundIndex) {
-                handleRoundCompletion(for: card.roundIndex)
-            } else if let next = selectNextCard() {
+    private func continueAfterAnswer(for card: TemperatureCard) {
+        if progressStore.isSubRoundComplete(
+            progressStore.currentRoundIndex,
+            subRoundIndex: progressStore.currentSubRoundIndex
+        ) {
+            advanceFromCompletedSubRound()
+        } else if let next = selectNextCard() {
+            transitionToCard(next)
+        }
+    }
+
+    private func advanceFromCompletedSubRound() {
+        if progressStore.advanceSubRoundIfNeeded() {
+            lastCardID = nil
+            if let next = selectNextCard() {
                 transitionToCard(next)
             }
+            return
+        }
+
+        if progressStore.isRoundComplete(progressStore.currentRoundIndex) {
+            handleRoundCompletion(for: progressStore.currentRoundIndex)
         }
     }
 
@@ -158,7 +177,7 @@ final class TemperatureGameViewModel {
 
     private func selectNextCard(excluding excludedID: String? = nil) -> TemperatureCard? {
         let currentRoundIndex = progressStore.currentRoundIndex
-        let currentCards = TemperatureCurriculum.cards(forRound: currentRoundIndex)
+        let currentCards = progressStore.currentSubRoundCards()
         var unlearnedCurrent = currentCards.filter { !progressStore.progress(for: $0).isLearned }
 
         let avoidID = excludedID ?? lastCardID
@@ -190,16 +209,30 @@ final class TemperatureGameViewModel {
             pool = unlearnedCurrent.map { ($0, TemperatureGameConstants.currentRoundCardWeight) }
         }
 
-        let reviewCards = TemperatureCurriculum.allCards.filter { card in
-            card.roundIndex < currentRoundIndex
-                && progressStore.progress(for: card).isLearned
-                && card.id != avoidID
-        }
-        for card in reviewCards {
-            pool.append((card, TemperatureGameConstants.reviewCardWeight))
+        // Review cards from earlier sub-rounds/rounds in the mixed sub-round only.
+        if progressStore.currentSubRoundIndex == 2 {
+            let reviewCards = TemperatureCurriculum.allCards.filter { reviewCard in
+                (reviewCard.roundIndex < currentRoundIndex
+                    || (reviewCard.roundIndex == currentRoundIndex && isEarlierSubRound(reviewCard)))
+                    && progressStore.progress(for: reviewCard).isLearned
+                    && reviewCard.id != avoidID
+            }
+            for card in reviewCards {
+                pool.append((card, TemperatureGameConstants.reviewCardWeight))
+            }
         }
 
         return weightedRandom(from: pool)
+    }
+
+    private func isEarlierSubRound(_ card: TemperatureCard) -> Bool {
+        guard card.roundIndex == progressStore.currentRoundIndex else { return false }
+        switch card.direction {
+        case .celsiusToFahrenheit:
+            return progressStore.currentSubRoundIndex > 0
+        case .fahrenheitToCelsius:
+            return progressStore.currentSubRoundIndex > 1
+        }
     }
 
     private func weightedRandom(from pool: [(card: TemperatureCard, weight: Int)]) -> TemperatureCard? {
