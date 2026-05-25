@@ -7,6 +7,7 @@ import SwiftUI
 
 struct ThermometerSliderView: View {
     let celsius: Int
+    var label: String?
     @Binding var selectedFahrenheit: Double
     let isEnabled: Bool
 
@@ -21,6 +22,7 @@ struct ThermometerSliderView: View {
             TemperaturePromptView(
                 value: celsius,
                 unit: "°C",
+                caption: label,
                 hint: "Drag the marker on the Fahrenheit scale"
             )
 

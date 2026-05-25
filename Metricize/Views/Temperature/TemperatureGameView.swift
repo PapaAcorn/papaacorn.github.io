@@ -65,7 +65,7 @@ struct TemperatureGameView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         #endif
-        .overlay(alignment: .bottom) {
+        .overlay {
             feedbackBanner
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.feedback)
@@ -96,26 +96,30 @@ struct TemperatureGameView: View {
 
     @ViewBuilder
     private func challengeView(for card: TemperatureCard) -> some View {
-        VStack(spacing: 12) {
-            switch card.challengeType {
-            case .thermometerSlider:
-                sliderChallenge(for: card)
-            case .multipleChoice:
-                MultipleChoiceChallengeView(
-                    card: card,
-                    choices: multipleChoiceOptions,
-                    isEnabled: !viewModel.isSubmitting,
-                    onSelect: { guess in
-                        viewModel.submitMultipleChoice(guess: guess, for: card)
-                    }
-                )
-                .id(card.id)
-                .padding(.horizontal, 20)
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+
+            VStack(spacing: 12) {
+                switch card.challengeType {
+                case .thermometerSlider:
+                    sliderChallenge(for: card)
+                case .multipleChoice:
+                    MultipleChoiceChallengeView(
+                        card: card,
+                        choices: multipleChoiceOptions,
+                        isEnabled: !viewModel.isSubmitting,
+                        onSelect: { guess in
+                            viewModel.submitMultipleChoice(guess: guess, for: card)
+                        }
+                    )
+                    .id(card.id)
+                    .padding(.horizontal, 20)
+                }
             }
+
+            Spacer(minLength: 0)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity.combined(with: .scale(scale: 0.98)))
         .id(card.id)
         .onChange(of: card.id) { _, _ in
@@ -135,6 +139,7 @@ struct TemperatureGameView: View {
             case .celsiusToFahrenheit:
                 ThermometerSliderView(
                     celsius: card.celsius,
+                    label: card.label,
                     selectedFahrenheit: $sliderValueFahrenheit,
                     isEnabled: !viewModel.isSubmitting
                 )
@@ -154,6 +159,7 @@ struct TemperatureGameView: View {
             case .fahrenheitToCelsius:
                 CelsiusSliderView(
                     fahrenheit: card.promptValue,
+                    label: card.label,
                     selectedCelsius: $sliderValueCelsius,
                     isEnabled: !viewModel.isSubmitting
                 )
@@ -192,24 +198,21 @@ struct TemperatureGameView: View {
             EmptyView()
         case .exact:
             FeedbackToast(text: "Exactly Right!", icon: "checkmark.circle.fill", isSuccess: true)
-                .padding(.bottom, 28)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(.scale(scale: 0.92).combined(with: .opacity))
         case .closeEnough(let answer, let unit):
             FeedbackToast(
                 text: "Close enough! It's \(AnswerFormatting.degreesPhrase(value: answer, unit: unit))",
                 icon: "checkmark.circle.fill",
                 isSuccess: true
             )
-            .padding(.bottom, 28)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .transition(.scale(scale: 0.92).combined(with: .opacity))
         case .incorrect(let correctAnswer, let unit):
             FeedbackToast(
                 text: "Not quite — it's \(AnswerFormatting.degreesPhrase(value: correctAnswer, unit: unit))",
                 icon: "xmark.circle.fill",
                 isSuccess: false
             )
-            .padding(.bottom, 28)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .transition(.scale(scale: 0.92).combined(with: .opacity))
         }
     }
 

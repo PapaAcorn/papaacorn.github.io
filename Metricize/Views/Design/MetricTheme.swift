@@ -165,10 +165,12 @@ struct TemperaturePromptView: View {
     var body: some View {
         VStack(spacing: 10) {
             if let caption {
-                Text(caption.uppercased())
-                    .font(.caption.weight(.semibold))
-                    .tracking(1.2)
-                    .foregroundStyle(MetricTheme.textTertiary)
+                Text("Hint: \(caption)")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(MetricTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .padding(.horizontal, 8)
             }
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -192,8 +194,8 @@ struct TemperaturePromptView: View {
 
             if let hint {
                 Text(hint)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(MetricTheme.textSecondary)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(MetricTheme.textTertiary)
             }
         }
         .multilineTextAlignment(.center)
@@ -333,29 +335,34 @@ struct FeedbackToast: View {
     let isSuccess: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.body.weight(.semibold))
+                .font(.title3.weight(.semibold))
                 .symbolEffect(.bounce, value: text)
             Text(text)
-                .font(.subheadline.weight(.semibold))
+                .font(.body.weight(.semibold))
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(isSuccess ? MetricTheme.success : Color(red: 1.0, green: 0.55, blue: 0.45))
-        .padding(.horizontal, 22)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 20)
+        .frame(maxWidth: 320)
         .background {
-            Capsule(style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(.ultraThinMaterial)
+                .background {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(MetricTheme.inkSoft.opacity(0.55))
+                }
                 .overlay {
-                    Capsule(style: .continuous)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .strokeBorder(
                             (isSuccess ? MetricTheme.success : Color(red: 1.0, green: 0.45, blue: 0.38)).opacity(0.45),
-                            lineWidth: 1
+                            lineWidth: 1.5
                         )
                 }
         }
-        .shadow(color: .black.opacity(0.25), radius: 20, y: 8)
+        .shadow(color: .black.opacity(0.35), radius: 24, y: 10)
     }
 }

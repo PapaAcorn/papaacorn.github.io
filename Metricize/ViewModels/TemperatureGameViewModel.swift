@@ -119,7 +119,7 @@ final class TemperatureGameViewModel {
         }
 
         Task {
-            try? await Task.sleep(for: .milliseconds(isCorrect ? 900 : 1600))
+            try? await Task.sleep(for: .milliseconds(isCorrect ? 1800 : 3200))
             feedback = .none
             isSubmitting = false
             continueAfterAnswer(for: card)
