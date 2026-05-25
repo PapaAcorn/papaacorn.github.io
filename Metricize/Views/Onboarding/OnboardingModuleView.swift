@@ -13,6 +13,7 @@ struct OnboardingModuleView: View {
 
     @State private var pageIndex = 0
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.metricPalette) private var palette
 
     private var isLastPage: Bool {
         pageIndex >= pages.count - 1
@@ -53,7 +54,7 @@ struct OnboardingModuleView: View {
         HStack(spacing: 6) {
             ForEach(pages.indices, id: \.self) { index in
                 Capsule()
-                    .fill(index == pageIndex ? MetricTheme.warmEmber : Color.white.opacity(0.15))
+                    .fill(index == pageIndex ? MetricTheme.warmEmber : palette.progressTrack)
                     .frame(width: index == pageIndex ? 28 : 8, height: 4)
                     .animation(.spring(response: 0.4), value: pageIndex)
             }
@@ -77,7 +78,7 @@ struct OnboardingModuleView: View {
                 if let title = page.title {
                     Text(title.withDecimalLineBreakProtection)
                         .font(.system(size: titleSize, weight: .semibold, design: .rounded))
-                        .foregroundStyle(MetricTheme.textPrimary)
+                        .foregroundStyle(palette.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.bottom, 4)
                 }
@@ -85,7 +86,7 @@ struct OnboardingModuleView: View {
                 ForEach(Array(sentences.enumerated()), id: \.offset) { _, sentence in
                     Text(sentence)
                         .font(.system(size: bodySize, weight: .regular, design: .rounded))
-                        .foregroundStyle(MetricTheme.textSecondary)
+                        .foregroundStyle(palette.textSecondary)
                         .lineSpacing(bodySize * 0.2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -99,7 +100,7 @@ struct OnboardingModuleView: View {
                                     .foregroundStyle(MetricTheme.warmGlow)
                                 Text(item.withDecimalLineBreakProtection)
                                     .font(.system(size: bodySize * 0.92, weight: .regular, design: .rounded))
-                                    .foregroundStyle(MetricTheme.textSecondary)
+                                    .foregroundStyle(palette.textSecondary)
                                     .lineSpacing(bodySize * 0.15)
                                     .fixedSize(horizontal: false, vertical: true)
                             }

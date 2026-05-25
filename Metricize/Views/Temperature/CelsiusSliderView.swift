@@ -11,6 +11,8 @@ struct CelsiusSliderView: View {
     @Binding var selectedCelsius: Double
     let isEnabled: Bool
 
+    @Environment(\.metricPalette) private var palette
+
     private let range = Double(TemperatureGameConstants.celsiusMin)...Double(TemperatureGameConstants.celsiusMax)
 
     private var guessHue: Color {
@@ -133,7 +135,7 @@ struct CelsiusSliderView: View {
             Text("Your guess")
                 .font(.caption.weight(.semibold))
                 .tracking(0.8)
-                .foregroundStyle(MetricTheme.textTertiary)
+                .foregroundStyle(palette.textTertiary)
 
             VStack(spacing: 2) {
                 Text("\(Int(selectedCelsius.rounded()))")
@@ -143,12 +145,12 @@ struct CelsiusSliderView: View {
 
                 Text("°C")
                     .font(.title3.weight(.light))
-                    .foregroundStyle(MetricTheme.textSecondary)
+                    .foregroundStyle(palette.textSecondary)
             }
 
             Text("±\(TemperatureGameConstants.toleranceDegrees)° counts")
                 .font(.caption2)
-                .foregroundStyle(MetricTheme.textTertiary)
+                .foregroundStyle(palette.textTertiary)
                 .multilineTextAlignment(.center)
         }
         .frame(width: 110)
@@ -163,11 +165,11 @@ struct CelsiusSliderView: View {
             ForEach(ticks, id: \.self) { tick in
                 HStack(spacing: 6) {
                     Rectangle()
-                        .fill(Color.white.opacity(majorTicks.contains(tick) ? 0.28 : 0.12))
+                        .fill(majorTicks.contains(tick) ? palette.textTertiary : palette.progressTrack)
                         .frame(width: majorTicks.contains(tick) ? 14 : 7, height: 1)
                     Text("\(tick)°")
                         .font(.caption2.monospacedDigit())
-                        .foregroundStyle(MetricTheme.textTertiary)
+                        .foregroundStyle(palette.textTertiary)
                 }
                 .position(x: 30, y: yPosition(for: Double(tick), in: height))
             }

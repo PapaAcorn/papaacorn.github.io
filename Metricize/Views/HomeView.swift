@@ -6,6 +6,8 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(\.metricPalette) private var palette
+
     @State private var temperatureProgress = TemperatureProgressStore()
     @State private var unlockStore = ModuleUnlockStore()
 
@@ -23,6 +25,28 @@ struct HomeView: View {
             .metricScreenBackground()
             #if os(iOS)
             .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SettingsView()
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(palette.textSecondary)
+                    }
+                }
+            }
+            #else
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    NavigationLink {
+                        SettingsView()
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .foregroundStyle(palette.textSecondary)
+                    }
+                }
+            }
             #endif
         }
     }
@@ -33,7 +57,7 @@ struct HomeView: View {
                 .font(.system(size: 38, weight: .bold, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [.white, MetricTheme.textSecondary],
+                        colors: [palette.textPrimary, palette.heroHighlight],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -41,7 +65,7 @@ struct HomeView: View {
 
             Text("Develop an intuitive feel for metric units — through repetition, not calculators.")
                 .font(.body)
-                .foregroundStyle(MetricTheme.textSecondary)
+                .foregroundStyle(palette.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.top, 12)
@@ -96,15 +120,15 @@ struct HomeView: View {
                 } label: {
                     Text("Reset")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(MetricTheme.textSecondary)
+                        .foregroundStyle(palette.textSecondary)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background {
                             Capsule(style: .continuous)
-                                .fill(Color.white.opacity(0.08))
+                                .fill(palette.chipFill)
                                 .overlay {
                                     Capsule(style: .continuous)
-                                        .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                                        .strokeBorder(palette.chipStroke, lineWidth: 1)
                                 }
                         }
                 }
@@ -165,17 +189,13 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 14) {
             sectionLabel("Coming Soon")
 
-            ModulePreviewCard(
-                title: "Distance",
-                subtitle: "Kilometers, meters, and pace",
-                systemImage: "ruler"
-            )
-
-            ModulePreviewCard(
-                title: "Volume",
-                subtitle: "Liters and milliliters",
-                systemImage: "drop.fill"
-            )
+            ForEach(ComingSoonModule.allCases) { module in
+                ModulePreviewCard(
+                    title: module.title,
+                    subtitle: module.subtitle,
+                    systemImage: module.systemImage
+                )
+            }
         }
     }
 
@@ -183,13 +203,15 @@ struct HomeView: View {
         Text(text.uppercased())
             .font(.caption.weight(.semibold))
             .tracking(1.4)
-            .foregroundStyle(MetricTheme.textTertiary)
+            .foregroundStyle(palette.textTertiary)
     }
 }
 
 // MARK: - Module cards
 
 private struct ModuleCard: View {
+    @Environment(\.metricPalette) private var palette
+
     let module: AppModule
     let isUnlocked: Bool
     let isComplete: Bool
@@ -200,15 +222,15 @@ private struct ModuleCard: View {
                 .font(.title2)
                 .foregroundStyle(MetricTheme.coolFrost)
                 .frame(width: 48, height: 48)
-                .background(Circle().fill(Color.white.opacity(0.08)))
+                .background(Circle().fill(palette.chipFill))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(module.title)
                     .font(.headline)
-                    .foregroundStyle(MetricTheme.textPrimary)
+                    .foregroundStyle(palette.textPrimary)
                 Text(module.subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(MetricTheme.textSecondary)
+                    .foregroundStyle(palette.textSecondary)
             }
 
             Spacer()
@@ -216,29 +238,31 @@ private struct ModuleCard: View {
             if !isUnlocked {
                 Label("Locked", systemImage: "lock.fill")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(MetricTheme.textTertiary)
+                    .foregroundStyle(palette.textTertiary)
             } else if isComplete {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(MetricTheme.success)
             } else {
                 Image(systemName: "arrow.up.right")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(MetricTheme.textTertiary)
+                    .foregroundStyle(palette.textTertiary)
             }
         }
         .padding(20)
         .background {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(MetricTheme.inkSoft.opacity(0.75))
+                .fill(palette.cardFill)
                 .overlay {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(MetricTheme.glassStroke, lineWidth: 1)
+                        .strokeBorder(palette.glassStroke, lineWidth: 1)
                 }
         }
     }
 }
 
 private struct LearnModuleCard: View {
+    @Environment(\.metricPalette) private var palette
+
     let isUnlocked: Bool
     let roundLabel: String
     let learned: Int
@@ -267,20 +291,20 @@ private struct LearnModuleCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(AppModule.learnInsideOutside.title)
                     .font(.headline)
-                    .foregroundStyle(MetricTheme.textPrimary)
+                    .foregroundStyle(palette.textPrimary)
 
                 if !isUnlocked {
                     Text("Complete Inside/Outside Basics first")
                         .font(.caption)
-                        .foregroundStyle(MetricTheme.textTertiary)
+                        .foregroundStyle(palette.textTertiary)
                 } else if hasProgress {
                     Text("Round \(roundLabel) · \(learned)/\(total) learned")
                         .font(.caption)
-                        .foregroundStyle(MetricTheme.textSecondary)
+                        .foregroundStyle(palette.textSecondary)
                 } else {
                     Text(AppModule.learnInsideOutside.subtitle)
                         .font(.subheadline)
-                        .foregroundStyle(MetricTheme.textSecondary)
+                        .foregroundStyle(palette.textSecondary)
                 }
             }
 
@@ -289,11 +313,11 @@ private struct LearnModuleCard: View {
             if !isUnlocked {
                 Label("Locked", systemImage: "lock.fill")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(MetricTheme.textTertiary)
+                    .foregroundStyle(palette.textTertiary)
             } else {
                 Image(systemName: "arrow.up.right")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(MetricTheme.textTertiary)
+                    .foregroundStyle(palette.textTertiary)
             }
         }
         .padding(20)
@@ -304,7 +328,7 @@ private struct LearnModuleCard: View {
                     LinearGradient(
                         colors: [
                             MetricTheme.warmEmber.opacity(isUnlocked ? 0.22 : 0.08),
-                            MetricTheme.inkSoft.opacity(0.85),
+                            palette.cardFill,
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -312,13 +336,15 @@ private struct LearnModuleCard: View {
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(MetricTheme.glassStroke, lineWidth: 1)
+                        .strokeBorder(palette.glassStroke, lineWidth: 1)
                 }
         }
     }
 }
 
 private struct ModulePreviewCard: View {
+    @Environment(\.metricPalette) private var palette
+
     let title: String
     let subtitle: String
     let systemImage: String
@@ -327,41 +353,43 @@ private struct ModulePreviewCard: View {
         HStack(spacing: 16) {
             Image(systemName: systemImage)
                 .font(.title3)
-                .foregroundStyle(MetricTheme.textSecondary)
+                .foregroundStyle(palette.textSecondary)
                 .frame(width: 44, height: 44)
-                .background(Circle().fill(Color.white.opacity(0.06)))
+                .background(Circle().fill(palette.chipFill))
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.headline)
-                    .foregroundStyle(MetricTheme.textSecondary)
+                    .foregroundStyle(palette.textSecondary)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(MetricTheme.textTertiary)
+                    .foregroundStyle(palette.textTertiary)
             }
 
             Spacer()
 
             Text("Soon")
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(MetricTheme.textTertiary)
+                .foregroundStyle(palette.textTertiary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Capsule().fill(Color.white.opacity(0.06)))
+                .background(Capsule().fill(palette.chipFill))
         }
         .padding(18)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(MetricTheme.inkSoft.opacity(0.45))
+                .fill(palette.cardFillMuted)
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
+                        .strokeBorder(palette.chipStroke, lineWidth: 1)
                 }
         }
-        .opacity(0.7)
+        .opacity(0.85)
     }
 }
 
 #Preview {
     HomeView()
+        .environment(AppSettingsStore())
+        .modifier(MetricPaletteProvider())
 }

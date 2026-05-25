@@ -12,6 +12,7 @@ struct RoundTipView: View {
 
     @State private var visibleTipIndex = 0
     @State private var glow = false
+    @Environment(\.metricPalette) private var palette
 
     private var isLastTip: Bool {
         visibleTipIndex >= tips.count - 1
@@ -49,16 +50,16 @@ struct RoundTipView: View {
                 Text("Before you continue")
                     .font(.caption.weight(.semibold))
                     .tracking(1.6)
-                    .foregroundStyle(MetricTheme.textTertiary)
+                    .foregroundStyle(palette.textTertiary)
 
                 Text(roundTitle)
                     .font(.title.weight(.semibold))
-                    .foregroundStyle(MetricTheme.textPrimary)
+                    .foregroundStyle(palette.textPrimary)
 
                 Text(tips[visibleTipIndex])
                     .font(.title3.weight(.regular))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(MetricTheme.textSecondary)
+                    .foregroundStyle(palette.textSecondary)
                     .lineSpacing(4)
                     .padding(.horizontal, 28)
                     .frame(minHeight: 100)
@@ -91,7 +92,7 @@ struct RoundTipView: View {
         HStack(spacing: 6) {
             ForEach(tips.indices, id: \.self) { index in
                 Capsule()
-                    .fill(index == visibleTipIndex ? MetricTheme.warmEmber : Color.white.opacity(0.15))
+                    .fill(index == visibleTipIndex ? MetricTheme.warmEmber : palette.progressTrack)
                     .frame(width: index == visibleTipIndex ? 28 : 8, height: 4)
                     .animation(.spring(response: 0.4), value: visibleTipIndex)
             }

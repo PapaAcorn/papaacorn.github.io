@@ -13,4 +13,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environment(AppSettingsStore())
+        .modifier(MetricPaletteProvider())
 }

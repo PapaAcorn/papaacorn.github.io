@@ -9,11 +9,7 @@ import UIKit
 #endif
 
 enum MetricTheme {
-    // MARK: - Palette
-
-    static let ink = Color(red: 0.07, green: 0.08, blue: 0.12)
-    static let inkElevated = Color(red: 0.11, green: 0.12, blue: 0.18)
-    static let inkSoft = Color(red: 0.16, green: 0.17, blue: 0.24)
+    // MARK: - Accent palette (shared across appearances)
 
     static let warmEmber = Color(red: 1.0, green: 0.52, blue: 0.28)
     static let warmGlow = Color(red: 1.0, green: 0.68, blue: 0.38)
@@ -22,6 +18,12 @@ enum MetricTheme {
 
     static let success = Color(red: 0.36, green: 0.84, blue: 0.58)
     static let successSoft = Color(red: 0.28, green: 0.72, blue: 0.48)
+
+    // MARK: - Legacy dark surfaces (prefer metricPalette in views)
+
+    static let ink = Color(red: 0.07, green: 0.08, blue: 0.12)
+    static let inkElevated = Color(red: 0.11, green: 0.12, blue: 0.18)
+    static let inkSoft = Color(red: 0.16, green: 0.17, blue: 0.24)
 
     static let textPrimary = Color.white.opacity(0.95)
     static let textSecondary = Color.white.opacity(0.62)
@@ -83,11 +85,103 @@ enum MetricTheme {
     )
 }
 
+struct MetricPalette {
+    let ink: Color
+    let inkSoft: Color
+    let textPrimary: Color
+    let textSecondary: Color
+    let textTertiary: Color
+    let cardFill: Color
+    let cardFillMuted: Color
+    let chipFill: Color
+    let chipStroke: Color
+    let divider: Color
+    let progressTrack: Color
+    let heroHighlight: Color
+    let glassStrokeTop: Color
+    let glassStrokeBottom: Color
+    let ambientDefaultSecondary: Color
+    let grainTop: Color
+    let grainBottom: Color
+
+    var glassStroke: LinearGradient {
+        LinearGradient(
+            colors: [glassStrokeTop, glassStrokeBottom],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    static let dark = MetricPalette(
+        ink: Color(red: 0.07, green: 0.08, blue: 0.12),
+        inkSoft: Color(red: 0.16, green: 0.17, blue: 0.24),
+        textPrimary: Color.white.opacity(0.95),
+        textSecondary: Color.white.opacity(0.62),
+        textTertiary: Color.white.opacity(0.38),
+        cardFill: Color(red: 0.16, green: 0.17, blue: 0.24).opacity(0.75),
+        cardFillMuted: Color(red: 0.16, green: 0.17, blue: 0.24).opacity(0.45),
+        chipFill: Color.white.opacity(0.08),
+        chipStroke: Color.white.opacity(0.12),
+        divider: Color.white.opacity(0.1),
+        progressTrack: Color.white.opacity(0.08),
+        heroHighlight: Color.white.opacity(0.62),
+        glassStrokeTop: Color.white.opacity(0.35),
+        glassStrokeBottom: Color.white.opacity(0.08),
+        ambientDefaultSecondary: MetricTheme.ink,
+        grainTop: Color.white.opacity(0.03),
+        grainBottom: Color.black.opacity(0.15)
+    )
+
+    static let light = MetricPalette(
+        ink: Color(red: 0.96, green: 0.97, blue: 0.99),
+        inkSoft: Color.white,
+        textPrimary: Color(red: 0.08, green: 0.10, blue: 0.16),
+        textSecondary: Color(red: 0.08, green: 0.10, blue: 0.16).opacity(0.68),
+        textTertiary: Color(red: 0.08, green: 0.10, blue: 0.16).opacity(0.42),
+        cardFill: Color.white.opacity(0.88),
+        cardFillMuted: Color.white.opacity(0.72),
+        chipFill: Color.black.opacity(0.05),
+        chipStroke: Color.black.opacity(0.08),
+        divider: Color.black.opacity(0.08),
+        progressTrack: Color.black.opacity(0.08),
+        heroHighlight: Color(red: 0.08, green: 0.10, blue: 0.16).opacity(0.72),
+        glassStrokeTop: Color.black.opacity(0.1),
+        glassStrokeBottom: Color.black.opacity(0.04),
+        ambientDefaultSecondary: Color(red: 0.92, green: 0.94, blue: 0.98),
+        grainTop: Color.white.opacity(0.35),
+        grainBottom: Color.black.opacity(0.04)
+    )
+
+    static func forScheme(_ scheme: ColorScheme) -> MetricPalette {
+        scheme == .dark ? .dark : .light
+    }
+}
+
+private struct MetricPaletteKey: EnvironmentKey {
+    static let defaultValue = MetricPalette.dark
+}
+
+extension EnvironmentValues {
+    var metricPalette: MetricPalette {
+        get { self[MetricPaletteKey.self] }
+        set { self[MetricPaletteKey.self] = newValue }
+    }
+}
+
+struct MetricPaletteProvider: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content.environment(\.metricPalette, MetricPalette.forScheme(colorScheme))
+    }
+}
+
 // MARK: - View modifiers
 
 struct GlassCardModifier: ViewModifier {
     var cornerRadius: CGFloat = 20
     var padding: CGFloat = 0
+    @Environment(\.metricPalette) private var palette
 
     func body(content: Content) -> some View {
         content
@@ -97,11 +191,11 @@ struct GlassCardModifier: ViewModifier {
                     .fill(.ultraThinMaterial)
                     .background {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(MetricTheme.inkSoft.opacity(0.45))
+                            .fill(palette.cardFill.opacity(0.65))
                     }
                     .overlay {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(MetricTheme.glassStroke, lineWidth: 1)
+                            .strokeBorder(palette.glassStroke, lineWidth: 1)
                     }
             }
     }
@@ -116,7 +210,6 @@ struct MetricScreenBackground: ViewModifier {
                 AmbientBackgroundView(celsius: celsius)
                     .ignoresSafeArea()
             }
-            .preferredColorScheme(.dark)
     }
 }
 
@@ -157,7 +250,9 @@ struct TemperaturePromptView: View {
     var caption: String?
     var hint: String?
 
-    private var palette: (primary: Color, secondary: Color, glow: Color) {
+    @Environment(\.metricPalette) private var palette
+
+    private var paletteColors: (primary: Color, secondary: Color, glow: Color) {
         let celsius = unit == "°C" ? value : TemperatureConversion.celsius(fromFahrenheit: value)
         return MetricTheme.palette(forCelsius: celsius)
     }
@@ -167,7 +262,7 @@ struct TemperaturePromptView: View {
             if let caption {
                 Text("Hint: \(caption)")
                     .font(.title3.weight(.medium))
-                    .foregroundStyle(MetricTheme.textSecondary)
+                    .foregroundStyle(palette.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
                     .padding(.horizontal, 8)
@@ -178,24 +273,24 @@ struct TemperaturePromptView: View {
                     .font(.system(size: 72, weight: .thin, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [palette.glow, palette.primary],
+                            colors: [paletteColors.glow, paletteColors.primary],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .contentTransition(.numericText())
-                    .shadow(color: palette.glow.opacity(0.35), radius: 16, y: 4)
+                    .shadow(color: paletteColors.glow.opacity(0.35), radius: 16, y: 4)
 
                 Text(unit)
                     .font(.system(size: 28, weight: .light, design: .rounded))
-                    .foregroundStyle(MetricTheme.textSecondary)
+                    .foregroundStyle(palette.textSecondary)
                     .offset(y: -8)
             }
 
             if let hint {
                 Text(hint)
                     .font(.body.weight(.medium))
-                    .foregroundStyle(MetricTheme.textTertiary)
+                    .foregroundStyle(palette.textTertiary)
             }
         }
         .multilineTextAlignment(.center)
@@ -212,6 +307,8 @@ struct LearningStreakView: View {
     let consecutiveCorrect: Int
     let required: Int
 
+    @Environment(\.metricPalette) private var palette
+
     var body: some View {
         HStack(spacing: 8) {
             ForEach(0..<required, id: \.self) { index in
@@ -219,7 +316,7 @@ struct LearningStreakView: View {
                     .fill(
                         index < consecutiveCorrect
                             ? AnyShapeStyle(MetricTheme.success)
-                            : AnyShapeStyle(Color.white.opacity(0.12))
+                            : AnyShapeStyle(palette.progressTrack)
                     )
                     .frame(width: index < consecutiveCorrect ? 22 : 10, height: 6)
                     .animation(.spring(response: 0.35, dampingFraction: 0.72), value: consecutiveCorrect)
@@ -227,7 +324,7 @@ struct LearningStreakView: View {
 
             Text("to learn")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(MetricTheme.textTertiary)
+                .foregroundStyle(palette.textTertiary)
         }
     }
 }
@@ -236,6 +333,8 @@ struct PrimaryActionButton: View {
     let title: String
     var isEnabled: Bool = true
     let action: () -> Void
+
+    @Environment(\.metricPalette) private var palette
 
     var body: some View {
         Button(action: action) {
@@ -246,7 +345,7 @@ struct PrimaryActionButton: View {
                 .foregroundStyle(.white)
                 .background {
                     Capsule(style: .continuous)
-                        .fill(isEnabled ? AnyShapeStyle(MetricTheme.primaryButton) : AnyShapeStyle(Color.white.opacity(0.15)))
+                        .fill(isEnabled ? AnyShapeStyle(MetricTheme.primaryButton) : AnyShapeStyle(palette.chipFill))
                         .shadow(color: MetricTheme.warmEmber.opacity(isEnabled ? 0.45 : 0), radius: 16, y: 6)
                 }
         }
@@ -261,6 +360,8 @@ struct RoundProgressHeader: View {
     let learned: Int
     let total: Int
 
+    @Environment(\.metricPalette) private var palette
+
     private var progress: Double {
         guard total > 0 else { return 0 }
         return Double(learned) / Double(total)
@@ -271,7 +372,7 @@ struct RoundProgressHeader: View {
             HStack(alignment: .center) {
                 Text(roundLabel)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(MetricTheme.textPrimary)
+                    .foregroundStyle(palette.textPrimary)
 
                 Spacer()
 
@@ -279,11 +380,11 @@ struct RoundProgressHeader: View {
                     Text("Learned")
                         .font(.caption2.weight(.semibold))
                         .tracking(0.6)
-                        .foregroundStyle(MetricTheme.textTertiary)
+                        .foregroundStyle(palette.textTertiary)
 
                     ZStack {
                         Circle()
-                            .stroke(Color.white.opacity(0.1), lineWidth: 4)
+                            .stroke(palette.progressTrack, lineWidth: 4)
                         Circle()
                             .trim(from: 0, to: progress)
                             .stroke(
@@ -298,7 +399,7 @@ struct RoundProgressHeader: View {
 
                         Text("\(learned)/\(total)")
                             .font(.caption2.weight(.bold).monospacedDigit())
-                            .foregroundStyle(MetricTheme.textSecondary)
+                            .foregroundStyle(palette.textSecondary)
                     }
                     .frame(width: 52, height: 52)
                 }
@@ -307,7 +408,7 @@ struct RoundProgressHeader: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.white.opacity(0.08))
+                        .fill(palette.progressTrack)
                     Capsule()
                         .fill(
                             LinearGradient(
@@ -325,7 +426,7 @@ struct RoundProgressHeader: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .glassCard(cornerRadius: 0, padding: 0)
-        .background(MetricTheme.ink.opacity(0.35))
+        .background(palette.ink.opacity(0.35))
     }
 }
 
@@ -333,6 +434,8 @@ struct FeedbackToast: View {
     let text: String
     let icon: String
     let isSuccess: Bool
+
+    @Environment(\.metricPalette) private var palette
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -353,7 +456,7 @@ struct FeedbackToast: View {
                 .fill(.ultraThinMaterial)
                 .background {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(MetricTheme.inkSoft.opacity(0.55))
+                        .fill(palette.cardFill.opacity(0.95))
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)

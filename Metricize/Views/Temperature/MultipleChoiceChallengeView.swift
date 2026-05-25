@@ -12,6 +12,7 @@ struct MultipleChoiceChallengeView: View {
     let onSelect: (Int) -> Void
 
     @State private var appeared = false
+    @Environment(\.metricPalette) private var palette
 
     private var hint: String {
         switch card.direction {
@@ -69,6 +70,7 @@ private struct ChoiceButton: View {
     let action: () -> Void
 
     @State private var isPressed = false
+    @Environment(\.metricPalette) private var palette
 
     private var accent: Color {
         if unit == "°F" {
@@ -92,13 +94,13 @@ private struct ChoiceButton: View {
 
                 Text("\(value)\(unit)")
                     .font(.title3.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(MetricTheme.textPrimary)
+                    .foregroundStyle(palette.textPrimary)
 
                 Spacer()
 
                 Image(systemName: "arrow.right")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(MetricTheme.textTertiary)
+                    .foregroundStyle(palette.textTertiary)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 18)

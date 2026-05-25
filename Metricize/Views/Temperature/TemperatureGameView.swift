@@ -11,6 +11,7 @@ struct TemperatureGameView: View {
     @State private var sliderValueCelsius: Double = TemperatureGameConstants.defaultSliderCelsius
     @State private var multipleChoiceOptions: [Int] = []
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.metricPalette) private var palette
 
     init(progressStore: TemperatureProgressStore = TemperatureProgressStore()) {
         _viewModel = State(initialValue: TemperatureGameViewModel(progressStore: progressStore))
@@ -222,7 +223,7 @@ struct TemperatureGameView: View {
                 .tint(MetricTheme.warmEmber)
             Text("Preparing next round…")
                 .font(.subheadline)
-                .foregroundStyle(MetricTheme.textSecondary)
+                .foregroundStyle(palette.textSecondary)
         }
         .onAppear {
             viewModel.continueAfterRoundComplete()
@@ -260,11 +261,11 @@ struct TemperatureGameView: View {
 
             Text("Range Mastered")
                 .font(.largeTitle.weight(.bold))
-                .foregroundStyle(MetricTheme.textPrimary)
+                .foregroundStyle(palette.textPrimary)
 
             Text("You can now approximate everyday temperatures in both directions — within 3°, from memory.")
                 .font(.body)
-                .foregroundStyle(MetricTheme.textSecondary)
+                .foregroundStyle(palette.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .padding(.horizontal, 36)
@@ -281,7 +282,7 @@ struct TemperatureGameView: View {
                     viewModel.resetModule()
                 }
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(MetricTheme.textTertiary)
+                .foregroundStyle(palette.textTertiary)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 36)
