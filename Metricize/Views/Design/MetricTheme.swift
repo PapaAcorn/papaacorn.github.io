@@ -331,7 +331,7 @@ struct FeedbackToast: View {
             Text(text)
                 .font(.subheadline.weight(.semibold))
         }
-        .foregroundStyle(isSuccess ? MetricTheme.success : MetricTheme.warmGlow)
+        .foregroundStyle(isSuccess ? MetricTheme.success : Color(red: 1.0, green: 0.55, blue: 0.45))
         .padding(.horizontal, 22)
         .padding(.vertical, 14)
         .background {
@@ -340,7 +340,7 @@ struct FeedbackToast: View {
                 .overlay {
                     Capsule(style: .continuous)
                         .strokeBorder(
-                            (isSuccess ? MetricTheme.success : MetricTheme.warmEmber).opacity(0.4),
+                            (isSuccess ? MetricTheme.success : Color(red: 1.0, green: 0.45, blue: 0.38)).opacity(0.45),
                             lineWidth: 1
                         )
                 }

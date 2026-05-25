@@ -134,21 +134,24 @@ struct TemperatureGameView: View {
         }
         .transition(.opacity.combined(with: .scale(scale: 0.98)))
         .id(card.id)
-        .onChange(of: card.id, initial: true) { _, _ in
+        .onChange(of: card.id) { _, _ in
             prepareChallenge(for: card)
+        }
+        .onChange(of: viewModel.phase, initial: true) { _, phase in
+            if case .playing(let card) = phase {
+                prepareChallenge(for: card)
+            }
         }
     }
 
     private func prepareChallenge(for card: TemperatureCard) {
-        guard preparedCardID != card.id else { return }
-        preparedCardID = card.id
-
         if card.challengeType == .thermometerSlider {
             sliderValue = 50
         }
         if card.challengeType == .multipleChoice {
             multipleChoiceOptions = TemperatureGameViewModel.multipleChoiceOptions(for: card)
         }
+        preparedCardID = card.id
     }
 
     @ViewBuilder
@@ -162,8 +165,8 @@ struct TemperatureGameView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
         case .incorrect(let correctFahrenheit):
             FeedbackToast(
-                text: "About \(correctFahrenheit)°F",
-                icon: "thermometer.medium",
+                text: "Not quite — it's \(correctFahrenheit)°F",
+                icon: "xmark.circle.fill",
                 isSuccess: false
             )
             .padding(.bottom, 28)

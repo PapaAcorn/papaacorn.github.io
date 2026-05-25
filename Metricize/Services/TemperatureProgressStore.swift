@@ -59,8 +59,13 @@ final class TemperatureProgressStore {
         save()
     }
 
+    func unmarkTipSeen(forRound roundIndex: Int) {
+        hasSeenTipForRound.remove(roundIndex)
+        save()
+    }
+
     func shouldShowTipBeforeRound(_ roundIndex: Int) -> Bool {
-        roundIndex > 0 && !hasSeenTipForRound.contains(roundIndex)
+        !hasSeenTipForRound.contains(roundIndex)
     }
 
     var isModuleComplete: Bool {

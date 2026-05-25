@@ -117,13 +117,13 @@ final class TemperatureGameViewModel {
         feedback = correct ? .correct : .incorrect(correctFahrenheit: card.correctFahrenheit)
 
         Task {
-            try? await Task.sleep(for: .milliseconds(correct ? 900 : 1400))
+            try? await Task.sleep(for: .milliseconds(correct ? 900 : 1600))
             feedback = .none
             isSubmitting = false
 
             if progressStore.isRoundComplete(card.roundIndex) {
                 handleRoundCompletion(for: card.roundIndex)
-            } else if let next = selectNextCard() {
+            } else if let next = selectNextCard(excluding: correct ? nil : card.id) {
                 phase = .playing(next)
             }
         }
@@ -133,6 +133,8 @@ final class TemperatureGameViewModel {
         let nextRound = roundIndex + 1
         if nextRound < TemperatureCurriculum.rounds.count {
             progressStore.advanceToNextRoundIfNeeded()
+            // Always show tips between rounds, even if seen before on a prior session.
+            progressStore.unmarkTipSeen(forRound: nextRound)
             showTip(for: nextRound)
         } else {
             phase = .moduleComplete
@@ -146,10 +148,17 @@ final class TemperatureGameViewModel {
         )
     }
 
-    private func selectNextCard() -> TemperatureCard? {
+    private func selectNextCard(excluding excludedID: String? = nil) -> TemperatureCard? {
         let currentRoundIndex = progressStore.currentRoundIndex
         let currentCards = TemperatureCurriculum.cards(forRound: currentRoundIndex)
-        let unlearnedCurrent = currentCards.filter { !progressStore.progress(for: $0).isLearned }
+        var unlearnedCurrent = currentCards.filter { !progressStore.progress(for: $0).isLearned }
+
+        if let excludedID {
+            let withoutExcluded = unlearnedCurrent.filter { $0.id != excludedID }
+            if !withoutExcluded.isEmpty {
+                unlearnedCurrent = withoutExcluded
+            }
+        }
 
         guard !unlearnedCurrent.isEmpty else { return nil }
 
