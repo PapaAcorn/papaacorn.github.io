@@ -15,8 +15,9 @@ enum TemperatureGamePhase: Equatable {
 
 enum AnswerFeedback: Equatable {
     case none
-    case correct
-    case incorrect(correctFahrenheit: Int)
+    case exact(answer: Int, unit: String)
+    case closeEnough(answer: Int, unit: String)
+    case incorrect(correctAnswer: Int, unit: String)
 }
 
 @Observable
@@ -24,9 +25,10 @@ enum AnswerFeedback: Equatable {
 final class TemperatureGameViewModel {
     let progressStore: TemperatureProgressStore
 
-    private(set) var phase: TemperatureGamePhase = .playing(TemperatureCurriculum.rounds[0].cards[0]) // overwritten in init
+    private(set) var phase: TemperatureGamePhase = .playing(TemperatureCurriculum.rounds[0].cards[0])
     private(set) var feedback: AnswerFeedback = .none
     private(set) var isSubmitting = false
+    private var lastCardID: String?
 
     init(progressStore: TemperatureProgressStore) {
         self.progressStore = progressStore
@@ -44,6 +46,8 @@ final class TemperatureGameViewModel {
     }
 
     func resumeFromSavedState() {
+        lastCardID = nil
+
         if progressStore.isModuleComplete {
             phase = .moduleComplete
             return
@@ -60,38 +64,24 @@ final class TemperatureGameViewModel {
         }
 
         if let nextCard = selectNextCard() {
-            phase = .playing(nextCard)
+            transitionToCard(nextCard)
         }
     }
 
     func submitSliderAnswer(guess: Int, for card: TemperatureCard) {
-        let correct = TemperatureConversion.isWithinTolerance(
-            guess: guess,
-            target: card.correctFahrenheit,
-            tolerance: TemperatureGameConstants.sliderToleranceFahrenheit
-        )
-        submitAnswer(correct: correct, for: card)
+        submitAnswer(guess: guess, for: card)
     }
 
     func submitMultipleChoice(guess: Int, for card: TemperatureCard) {
-        let correct = TemperatureConversion.isWithinTolerance(
-            guess: guess,
-            target: card.correctFahrenheit,
-            tolerance: TemperatureGameConstants.multipleChoiceToleranceFahrenheit
-        )
-        submitAnswer(correct: correct, for: card)
+        submitAnswer(guess: guess, for: card)
     }
 
     func dismissTipAndContinue() {
         guard case .showingTip(let roundIndex, _) = phase else { return }
         progressStore.markTipSeen(forRound: roundIndex)
 
-        if progressStore.isRoundComplete(roundIndex - 1) == false && roundIndex == progressStore.currentRoundIndex {
-            // Tip shown before entering this round — start playing.
-        }
-
         if let card = selectNextCard() {
-            phase = .playing(card)
+            transitionToCard(card)
         } else if progressStore.isModuleComplete {
             phase = .moduleComplete
         }
@@ -105,36 +95,54 @@ final class TemperatureGameViewModel {
     func resetModule() {
         progressStore.resetProgress()
         feedback = .none
+        lastCardID = nil
         resumeFromSavedState()
     }
 
     // MARK: - Private
 
-    private func submitAnswer(correct: Bool, for card: TemperatureCard) {
+    private func submitAnswer(guess: Int, for card: TemperatureCard) {
         guard !isSubmitting else { return }
         isSubmitting = true
-        progressStore.recordAnswer(for: card, correct: correct)
-        feedback = correct ? .correct : .incorrect(correctFahrenheit: card.correctFahrenheit)
+
+        let target = card.correctAnswer
+        let result = TemperatureConversion.evaluate(guess: guess, target: target)
+        let isCorrect = result != .incorrect
+        progressStore.recordAnswer(for: card, correct: isCorrect)
+
+        switch result {
+        case .exact:
+            feedback = .exact(answer: target, unit: card.answerUnit)
+        case .closeEnough:
+            feedback = .closeEnough(answer: target, unit: card.answerUnit)
+        case .incorrect:
+            feedback = .incorrect(correctAnswer: target, unit: card.answerUnit)
+        }
 
         Task {
-            try? await Task.sleep(for: .milliseconds(correct ? 900 : 1600))
+            try? await Task.sleep(for: .milliseconds(isCorrect ? 900 : 1600))
             feedback = .none
             isSubmitting = false
 
             if progressStore.isRoundComplete(card.roundIndex) {
                 handleRoundCompletion(for: card.roundIndex)
-            } else if let next = selectNextCard(excluding: correct ? nil : card.id) {
-                phase = .playing(next)
+            } else if let next = selectNextCard() {
+                transitionToCard(next)
             }
         }
+    }
+
+    private func transitionToCard(_ card: TemperatureCard) {
+        lastCardID = card.id
+        phase = .playing(card)
     }
 
     private func handleRoundCompletion(for roundIndex: Int) {
         let nextRound = roundIndex + 1
         if nextRound < TemperatureCurriculum.rounds.count {
             progressStore.advanceToNextRoundIfNeeded()
-            // Always show tips between rounds, even if seen before on a prior session.
             progressStore.unmarkTipSeen(forRound: nextRound)
+            lastCardID = nil
             showTip(for: nextRound)
         } else {
             phase = .moduleComplete
@@ -153,8 +161,9 @@ final class TemperatureGameViewModel {
         let currentCards = TemperatureCurriculum.cards(forRound: currentRoundIndex)
         var unlearnedCurrent = currentCards.filter { !progressStore.progress(for: $0).isLearned }
 
-        if let excludedID {
-            let withoutExcluded = unlearnedCurrent.filter { $0.id != excludedID }
+        let avoidID = excludedID ?? lastCardID
+        if let avoidID {
+            let withoutExcluded = unlearnedCurrent.filter { $0.id != avoidID }
             if !withoutExcluded.isEmpty {
                 unlearnedCurrent = withoutExcluded
             }
@@ -164,7 +173,7 @@ final class TemperatureGameViewModel {
 
         var pool: [(card: TemperatureCard, weight: Int)] = []
 
-        for card in unlearnedCurrent {
+        for card in unlearnedCurrent where card.id != avoidID {
             let progress = progressStore.progress(for: card)
             let weight: Int
             if progress.totalIncorrect > 0 && progress.consecutiveCorrect == 0 {
@@ -177,9 +186,14 @@ final class TemperatureGameViewModel {
             pool.append((card, weight))
         }
 
-        // Sprinkle in learned cards from earlier rounds for retention.
+        if pool.isEmpty {
+            pool = unlearnedCurrent.map { ($0, TemperatureGameConstants.currentRoundCardWeight) }
+        }
+
         let reviewCards = TemperatureCurriculum.allCards.filter { card in
-            card.roundIndex < currentRoundIndex && progressStore.progress(for: card).isLearned
+            card.roundIndex < currentRoundIndex
+                && progressStore.progress(for: card).isLearned
+                && card.id != avoidID
         }
         for card in reviewCards {
             pool.append((card, TemperatureGameConstants.reviewCardWeight))
@@ -202,38 +216,50 @@ final class TemperatureGameViewModel {
 
 extension TemperatureGameViewModel {
     static func multipleChoiceOptions(for card: TemperatureCard) -> [Int] {
-        let correct = card.correctFahrenheit
-        let bounds = TemperatureGameConstants.fahrenheitMin...TemperatureGameConstants.fahrenheitMax
+        let correct = card.correctAnswer
+        let bounds = card.answerRange
+        let tolerance = TemperatureGameConstants.toleranceDegrees
         var distractors = Set<Int>()
 
         let offsets = [4, 6, 8, 10, 12, 15, 18, -4, -6, -8, -10, -12, -15, -18, 22, -22, 28, -28]
         for offset in offsets {
             let candidate = correct + offset
-            if candidate != correct, bounds.contains(candidate) {
+            if isValidDistractor(candidate, correct: correct, bounds: bounds, tolerance: tolerance) {
                 distractors.insert(candidate)
             }
             if distractors.count == 3 { break }
         }
 
-        var step = 20
+        var step = tolerance + 4
         while distractors.count < 3 {
             for delta in [step, -step] {
                 let candidate = correct + delta
-                if candidate != correct, bounds.contains(candidate) {
+                if isValidDistractor(candidate, correct: correct, bounds: bounds, tolerance: tolerance) {
                     distractors.insert(candidate)
                 }
             }
-            step += 10
-            if step > 60 { break }
+            step += 4
+            if step > 40 { break }
         }
 
         while distractors.count < 3 {
             let candidate = Int.random(in: bounds)
-            if candidate != correct {
+            if isValidDistractor(candidate, correct: correct, bounds: bounds, tolerance: tolerance) {
                 distractors.insert(candidate)
             }
         }
 
         return (Array(distractors.prefix(3)) + [correct]).shuffled()
+    }
+
+    private static func isValidDistractor(
+        _ candidate: Int,
+        correct: Int,
+        bounds: ClosedRange<Int>,
+        tolerance: Int
+    ) -> Bool {
+        bounds.contains(candidate)
+            && candidate != correct
+            && abs(candidate - correct) > tolerance
     }
 }

@@ -152,12 +152,14 @@ extension View {
 // MARK: - Shared components
 
 struct TemperaturePromptView: View {
-    let celsius: Int
+    let value: Int
+    let unit: String
     var caption: String?
-    var showUnitHint: Bool = true
+    var hint: String?
 
     private var palette: (primary: Color, secondary: Color, glow: Color) {
-        MetricTheme.palette(forCelsius: celsius)
+        let celsius = unit == "°C" ? value : TemperatureConversion.celsius(fromFahrenheit: value)
+        return MetricTheme.palette(forCelsius: celsius)
     }
 
     var body: some View {
@@ -170,7 +172,7 @@ struct TemperaturePromptView: View {
             }
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(celsius)")
+                Text("\(value)")
                     .font(.system(size: 72, weight: .thin, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
@@ -182,19 +184,29 @@ struct TemperaturePromptView: View {
                     .contentTransition(.numericText())
                     .shadow(color: palette.glow.opacity(0.35), radius: 16, y: 4)
 
-                Text("°C")
+                Text(unit)
                     .font(.system(size: 28, weight: .light, design: .rounded))
                     .foregroundStyle(MetricTheme.textSecondary)
                     .offset(y: -8)
             }
 
-            if showUnitHint {
-                Text("Match this in Fahrenheit")
+            if let hint {
+                Text(hint)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(MetricTheme.textSecondary)
             }
         }
         .multilineTextAlignment(.center)
+    }
+}
+
+enum AnswerFormatting {
+    static func degreesPhrase(value: Int, unit: String) -> String {
+        switch unit {
+        case "°F": "\(value) degrees Fahrenheit"
+        case "°C": "\(value) degrees Celsius"
+        default: "\(value)\(unit)"
+        }
     }
 }
 
@@ -324,12 +336,14 @@ struct FeedbackToast: View {
     let isSuccess: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
                 .font(.body.weight(.semibold))
                 .symbolEffect(.bounce, value: text)
             Text(text)
                 .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(isSuccess ? MetricTheme.success : Color(red: 1.0, green: 0.55, blue: 0.45))
         .padding(.horizontal, 22)

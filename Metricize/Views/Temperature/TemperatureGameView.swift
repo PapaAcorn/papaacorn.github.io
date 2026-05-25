@@ -7,9 +7,9 @@ import SwiftUI
 
 struct TemperatureGameView: View {
     @State private var viewModel: TemperatureGameViewModel
-    @State private var sliderValue: Double = 50
+    @State private var sliderValueFahrenheit: Double = TemperatureGameConstants.defaultSliderFahrenheit
+    @State private var sliderValueCelsius: Double = TemperatureGameConstants.defaultSliderCelsius
     @State private var multipleChoiceOptions: [Int] = []
-    @State private var preparedCardID: String?
     @Environment(\.dismiss) private var dismiss
 
     init(progressStore: TemperatureProgressStore = TemperatureProgressStore()) {
@@ -53,6 +53,7 @@ struct TemperatureGameView: View {
         }
         .metricScreenBackground(celsius: activeCelsius)
         #if os(iOS)
+        .navigationTitle("Learn Inside/Outside")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         #endif
@@ -62,7 +63,7 @@ struct TemperatureGameView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.feedback)
         .onChange(of: viewModel.feedback) { _, feedback in
             switch feedback {
-            case .correct:
+            case .exact, .closeEnough:
                 metricHaptic(.success)
             case .incorrect:
                 metricHaptic(.warning)
@@ -99,26 +100,10 @@ struct TemperatureGameView: View {
 
             switch card.challengeType {
             case .thermometerSlider:
-                ThermometerSliderView(
-                    celsius: card.celsius,
-                    selectedFahrenheit: $sliderValue,
-                    isEnabled: !viewModel.isSubmitting
-                )
-                .id(card.id)
-
-                PrimaryActionButton(
-                    title: "Check",
-                    isEnabled: !viewModel.isSubmitting
-                ) {
-                    viewModel.submitSliderAnswer(guess: Int(sliderValue.rounded()), for: card)
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 28)
-
+                sliderChallenge(for: card)
             case .multipleChoice:
                 MultipleChoiceChallengeView(
-                    celsius: card.celsius,
-                    subtitle: card.label,
+                    card: card,
                     choices: multipleChoiceOptions,
                     isEnabled: !viewModel.isSubmitting,
                     onSelect: { guess in
@@ -144,14 +129,61 @@ struct TemperatureGameView: View {
         }
     }
 
+    @ViewBuilder
+    private func sliderChallenge(for card: TemperatureCard) -> some View {
+        switch card.direction {
+        case .celsiusToFahrenheit:
+            ThermometerSliderView(
+                celsius: card.celsius,
+                selectedFahrenheit: $sliderValueFahrenheit,
+                isEnabled: !viewModel.isSubmitting
+            )
+            .id(card.id)
+
+            PrimaryActionButton(
+                title: "Check",
+                isEnabled: !viewModel.isSubmitting
+            ) {
+                viewModel.submitSliderAnswer(
+                    guess: Int(sliderValueFahrenheit.rounded()),
+                    for: card
+                )
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 28)
+
+        case .fahrenheitToCelsius:
+            CelsiusSliderView(
+                fahrenheit: card.promptValue,
+                selectedCelsius: $sliderValueCelsius,
+                isEnabled: !viewModel.isSubmitting
+            )
+            .id(card.id)
+
+            PrimaryActionButton(
+                title: "Check",
+                isEnabled: !viewModel.isSubmitting
+            ) {
+                viewModel.submitSliderAnswer(
+                    guess: Int(sliderValueCelsius.rounded()),
+                    for: card
+                )
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 28)
+        }
+    }
+
     private func prepareChallenge(for card: TemperatureCard) {
-        if card.challengeType == .thermometerSlider {
-            sliderValue = 50
+        switch card.direction {
+        case .celsiusToFahrenheit:
+            sliderValueFahrenheit = TemperatureGameConstants.defaultSliderFahrenheit
+        case .fahrenheitToCelsius:
+            sliderValueCelsius = TemperatureGameConstants.defaultSliderCelsius
         }
         if card.challengeType == .multipleChoice {
             multipleChoiceOptions = TemperatureGameViewModel.multipleChoiceOptions(for: card)
         }
-        preparedCardID = card.id
     }
 
     @ViewBuilder
@@ -159,13 +191,21 @@ struct TemperatureGameView: View {
         switch viewModel.feedback {
         case .none:
             EmptyView()
-        case .correct:
-            FeedbackToast(text: "Close enough!", icon: "checkmark.circle.fill", isSuccess: true)
+        case .exact:
+            FeedbackToast(text: "Exactly Right!", icon: "checkmark.circle.fill", isSuccess: true)
                 .padding(.bottom, 28)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-        case .incorrect(let correctFahrenheit):
+        case .closeEnough(let answer, let unit):
             FeedbackToast(
-                text: "Not quite — it's \(correctFahrenheit)°F",
+                text: "Close enough! It's \(AnswerFormatting.degreesPhrase(value: answer, unit: unit))",
+                icon: "checkmark.circle.fill",
+                isSuccess: true
+            )
+            .padding(.bottom, 28)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        case .incorrect(let correctAnswer, let unit):
+            FeedbackToast(
+                text: "Not quite — it's \(AnswerFormatting.degreesPhrase(value: correctAnswer, unit: unit))",
                 icon: "xmark.circle.fill",
                 isSuccess: false
             )
@@ -220,7 +260,7 @@ struct TemperatureGameView: View {
                 .font(.largeTitle.weight(.bold))
                 .foregroundStyle(MetricTheme.textPrimary)
 
-            Text("You can now approximate everyday Celsius temperatures in Fahrenheit — within a couple of degrees, from memory.")
+            Text("You can now approximate everyday temperatures in both directions — within 3 degrees, from memory.")
                 .font(.body)
                 .foregroundStyle(MetricTheme.textSecondary)
                 .multilineTextAlignment(.center)

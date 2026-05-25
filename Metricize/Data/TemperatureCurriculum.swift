@@ -6,59 +6,75 @@
 import Foundation
 
 enum TemperatureCurriculum {
-    /// Environmental temperatures from -15°F to 110°F, introduced in rounds of five.
+    /// Environmental temperatures from -10°F to 110°F. Each round teaches 5 anchor
+    /// conversions in both directions (10 cards per round).
     static let rounds: [TemperatureRound] = [
         TemperatureRound(
             index: 0,
             title: "Major Milestones",
-            cards: cards(forRound: 0, celsiusValues: [0, 10, 20, 37, 38], labels: [
-                "Freezing point of water",
-                "Cool spring or fall day (~50°F)",
-                "Comfortable room temperature",
-                "Very hot summer day",
-                "Boiling hot — about 100°F",
-            ])
+            cards: cards(
+                forRound: 0,
+                celsiusValues: [0, 20, 37, 10, 25],
+                labels: [
+                    "Freezing point of water",
+                    "Standard indoor room temperature",
+                    "Standard human body temperature",
+                    "Cool spring or fall day (~50°F)",
+                    "Warm afternoon",
+                ]
+            )
         ),
         TemperatureRound(
             index: 1,
             title: "Everyday Range",
-            cards: cards(forRound: 1, celsiusValues: [-10, 5, 15, 25, 30], labels: [
-                "Bitter cold morning",
-                "Chilly but above freezing",
-                "Light jacket weather",
-                "Warm afternoon",
-                "Hot day at the beach",
-            ])
+            cards: cards(
+                forRound: 1,
+                celsiusValues: [-10, 5, 15, 30, 35],
+                labels: [
+                    "Bitter cold morning",
+                    "Chilly but above freezing",
+                    "Light jacket weather",
+                    "Hot day at the beach",
+                    "Scorching afternoon",
+                ]
+            )
         ),
         TemperatureRound(
             index: 2,
             title: "Cold Extremes",
-            cards: cards(forRound: 2, celsiusValues: [-18, -5, 27, 35, 40], labels: [
-                "Deep winter cold",
-                "Just below freezing",
-                "Warm summer evening",
-                "Scorching afternoon",
-                "Near the upper environmental limit",
-            ])
+            cards: cards(
+                forRound: 2,
+                celsiusValues: [-18, -5, 27, 40, 43],
+                labels: [
+                    "Deep winter cold",
+                    "Just below freezing",
+                    "Warm summer evening",
+                    "Near the upper environmental limit",
+                    "Extreme heat (~110°F)",
+                ]
+            )
         ),
         TemperatureRound(
             index: 3,
             title: "Full Environmental Range",
-            cards: cards(forRound: 3, celsiusValues: [-26, 23, 32, 43, -15], labels: [
-                "Coldest you'll likely encounter",
-                "Pleasant spring day",
-                "Hot summer midday",
-                "Extreme heat (~110°F)",
-                "Frigid but survivable outdoors",
-            ])
+            cards: cards(
+                forRound: 3,
+                celsiusValues: [-23, 23, 32, -15, 38],
+                labels: [
+                    "Coldest you'll likely encounter",
+                    "Pleasant spring day",
+                    "Hot summer midday",
+                    "Frigid but survivable outdoors",
+                    "Very hot summer day (~100°F)",
+                ]
+            )
         ),
     ]
 
-    /// Tips shown between rounds — user advances manually; 1–2 per round.
     static let roundTips: [Int: [String]] = [
         0: [
             "0°C is the freezing point — think 32°F.",
-            "Room temperature sits around 20°C, roughly 70°F.",
+            "Room temperature sits around 20°C, roughly 68°F. Body temp is about 37°C.",
         ],
         1: [
             "A Quick Rule of Thumb: For quick estimations of ambient temperature, double the C and add 30. This won't be 100% accurate, but will get you in the ballpark.",
@@ -94,16 +110,25 @@ enum TemperatureCurriculum {
         celsiusValues: [Int],
         labels: [String]
     ) -> [TemperatureCard] {
-        zip(celsiusValues, labels).enumerated().map { offset, pair in
-            let challengeType: ChallengeType = offset.isMultiple(of: 2)
-                ? .thermometerSlider
-                : .multipleChoice
-            return TemperatureCard(
-                celsius: pair.0,
-                roundIndex: roundIndex,
-                challengeType: challengeType,
-                label: pair.1
-            )
+        zip(celsiusValues, labels).enumerated().flatMap { offset, pair in
+            let cToFType: ChallengeType = offset.isMultiple(of: 2) ? .thermometerSlider : .multipleChoice
+            let fToCType: ChallengeType = offset.isMultiple(of: 2) ? .multipleChoice : .thermometerSlider
+            return [
+                TemperatureCard(
+                    celsius: pair.0,
+                    roundIndex: roundIndex,
+                    challengeType: cToFType,
+                    direction: .celsiusToFahrenheit,
+                    label: pair.1
+                ),
+                TemperatureCard(
+                    celsius: pair.0,
+                    roundIndex: roundIndex,
+                    challengeType: fToCType,
+                    direction: .fahrenheitToCelsius,
+                    label: pair.1
+                ),
+            ]
         }
     }
 }

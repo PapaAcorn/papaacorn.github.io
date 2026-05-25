@@ -1,0 +1,27 @@
+//
+//  HowToUseContent.swift
+//  Metricize
+//
+
+import Foundation
+
+enum HowToUseContent {
+    static let pages: [OnboardingPage] = [
+        OnboardingPage(
+            index: 0,
+            body: "This app is not a conversion calculator. Siri can do that for you. This app is to help you build a mental model so that you know what a temperature in Celsius actually means."
+        ),
+        OnboardingPage(
+            index: 1,
+            body: "If a friend says \"It's about 90 degrees outside\" you, as a user of Fahrenheit, understand it's time for summer clothes. But what if a friend tells you it's 15 degrees C? Do you have a sense of what that means? Is it time to bring out the winter coat? Or is it just a chilly day?"
+        ),
+        OnboardingPage(
+            index: 2,
+            body: "Being able to answer that question is what this app is all about."
+        ),
+        OnboardingPage(
+            index: 3,
+            body: "Speaking of \"About\" — since this app is more about estimation than exact conversions, you don't even have to get the answers exactly right. Any answer within 3 degrees is close enough. We're just living day to day here — we're not in a laboratory."
+        ),
+    ]
+}

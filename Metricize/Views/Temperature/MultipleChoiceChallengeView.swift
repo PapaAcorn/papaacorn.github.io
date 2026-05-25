@@ -6,26 +6,34 @@
 import SwiftUI
 
 struct MultipleChoiceChallengeView: View {
-    let celsius: Int
-    let subtitle: String?
+    let card: TemperatureCard
     let choices: [Int]
     let isEnabled: Bool
     let onSelect: (Int) -> Void
 
     @State private var appeared = false
 
+    private var hint: String {
+        switch card.direction {
+        case .celsiusToFahrenheit: "is about how many °F?"
+        case .fahrenheitToCelsius: "is about how many °C?"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 32) {
             TemperaturePromptView(
-                celsius: celsius,
-                caption: subtitle,
-                showUnitHint: true
+                value: card.promptValue,
+                unit: card.promptUnit,
+                caption: card.label,
+                hint: hint
             )
 
             VStack(spacing: 10) {
                 ForEach(Array(choices.enumerated()), id: \.element) { index, choice in
                     ChoiceButton(
-                        fahrenheit: choice,
+                        value: choice,
+                        unit: card.answerUnit,
                         isEnabled: isEnabled,
                         delay: Double(index) * 0.06,
                         appeared: appeared
@@ -51,7 +59,8 @@ struct MultipleChoiceChallengeView: View {
 }
 
 private struct ChoiceButton: View {
-    let fahrenheit: Int
+    let value: Int
+    let unit: String
     let isEnabled: Bool
     let delay: Double
     let appeared: Bool
@@ -60,7 +69,11 @@ private struct ChoiceButton: View {
     @State private var isPressed = false
 
     private var accent: Color {
-        MetricTheme.fahrenheitHue(Double(fahrenheit))
+        if unit == "°F" {
+            MetricTheme.fahrenheitHue(Double(value))
+        } else {
+            MetricTheme.palette(forCelsius: value).glow
+        }
     }
 
     var body: some View {
@@ -75,7 +88,7 @@ private struct ChoiceButton: View {
                             .frame(width: 6, height: 6)
                     }
 
-                Text("\(fahrenheit)°F")
+                Text("\(value)\(unit)")
                     .font(.title3.weight(.semibold).monospacedDigit())
                     .foregroundStyle(MetricTheme.textPrimary)
 
@@ -115,19 +128,4 @@ private struct ChoiceButton: View {
                 .onEnded { _ in isPressed = false }
         )
     }
-}
-
-#Preview {
-    ZStack {
-        AmbientBackgroundView(celsius: 10).ignoresSafeArea()
-        MultipleChoiceChallengeView(
-            celsius: 10,
-            subtitle: "Cool spring or fall day",
-            choices: [42, 50, 58, 66],
-            isEnabled: true,
-            onSelect: { _ in }
-        )
-        .padding()
-    }
-    .preferredColorScheme(.dark)
 }

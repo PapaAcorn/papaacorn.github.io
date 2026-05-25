@@ -7,6 +7,7 @@ import SwiftUI
 
 struct HomeView: View {
     @State private var temperatureProgress = TemperatureProgressStore()
+    @State private var unlockStore = ModuleUnlockStore()
 
     var body: some View {
         NavigationStack {
@@ -48,14 +49,69 @@ struct HomeView: View {
 
     private var modulesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("Practice")
+            sectionLabel("Modules")
 
+            moduleLink(for: .howToUse) {
+                ModuleCard(
+                    module: .howToUse,
+                    isUnlocked: unlockStore.isUnlocked(.howToUse),
+                    isComplete: unlockStore.isComplete(.howToUse)
+                )
+            }
+
+            moduleLink(for: .insideOutsideBasics) {
+                ModuleCard(
+                    module: .insideOutsideBasics,
+                    isUnlocked: unlockStore.isUnlocked(.insideOutsideBasics),
+                    isComplete: unlockStore.isComplete(.insideOutsideBasics)
+                )
+            }
+
+            moduleLink(for: .learnInsideOutside) {
+                LearnModuleCard(
+                    progressStore: temperatureProgress,
+                    isUnlocked: unlockStore.isUnlocked(.learnInsideOutside),
+                    isComplete: false
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func moduleLink<Content: View>(for module: AppModule, @ViewBuilder content: () -> Content) -> some View {
+        if unlockStore.isUnlocked(module) {
             NavigationLink {
-                TemperatureGameView(progressStore: temperatureProgress)
+                destination(for: module)
             } label: {
-                TemperatureModuleCard(progressStore: temperatureProgress)
+                content()
             }
             .buttonStyle(.plain)
+        } else {
+            content()
+                .opacity(0.45)
+                .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for module: AppModule) -> some View {
+        switch module {
+        case .howToUse:
+            OnboardingModuleView(
+                module: .howToUse,
+                pages: HowToUseContent.pages,
+                unlockStore: unlockStore,
+                finalButtonTitle: "Get Started"
+            )
+        case .insideOutsideBasics:
+            OnboardingModuleView(
+                module: .insideOutsideBasics,
+                pages: InsideOutsideBasicsContent.pages,
+                unlockStore: unlockStore,
+                finalButtonTitle: "Get Started"
+            )
+        case .learnInsideOutside:
+            TemperatureGameView(progressStore: temperatureProgress)
         }
     }
 
@@ -66,23 +122,13 @@ struct HomeView: View {
             ModulePreviewCard(
                 title: "Distance",
                 subtitle: "Kilometers, meters, and pace",
-                systemImage: "ruler",
-                gradient: LinearGradient(
-                    colors: [Color(red: 0.35, green: 0.55, blue: 0.95), MetricTheme.inkSoft],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                systemImage: "ruler"
             )
 
             ModulePreviewCard(
                 title: "Volume",
                 subtitle: "Liters and milliliters",
-                systemImage: "drop.fill",
-                gradient: LinearGradient(
-                    colors: [Color(red: 0.25, green: 0.75, blue: 0.85), MetricTheme.inkSoft],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                systemImage: "drop.fill"
             )
         }
     }
@@ -97,8 +143,59 @@ struct HomeView: View {
 
 // MARK: - Module cards
 
-private struct TemperatureModuleCard: View {
+private struct ModuleCard: View {
+    let module: AppModule
+    let isUnlocked: Bool
+    let isComplete: Bool
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: module.systemImage)
+                .font(.title2)
+                .foregroundStyle(MetricTheme.coolFrost)
+                .frame(width: 48, height: 48)
+                .background(Circle().fill(Color.white.opacity(0.08)))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(module.title)
+                    .font(.headline)
+                    .foregroundStyle(MetricTheme.textPrimary)
+                Text(module.subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(MetricTheme.textSecondary)
+            }
+
+            Spacer()
+
+            if !isUnlocked {
+                Label("Locked", systemImage: "lock.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(MetricTheme.textTertiary)
+            } else if isComplete {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(MetricTheme.success)
+            } else {
+                Image(systemName: "arrow.up.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MetricTheme.textTertiary)
+            }
+        }
+        .padding(20)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(MetricTheme.inkSoft.opacity(0.75))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(MetricTheme.glassStroke, lineWidth: 1)
+                }
+        }
+    }
+}
+
+private struct LearnModuleCard: View {
     let progressStore: TemperatureProgressStore
+    let isUnlocked: Bool
+    let isComplete: Bool
 
     private var round: TemperatureRound {
         TemperatureCurriculum.rounds[progressStore.currentRoundIndex]
@@ -113,71 +210,63 @@ private struct TemperatureModuleCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [MetricTheme.warmGlow.opacity(0.5), MetricTheme.warmEmber.opacity(0.15)],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 36
-                            )
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [MetricTheme.warmGlow.opacity(0.5), MetricTheme.warmEmber.opacity(0.15)],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 36
                         )
-                        .frame(width: 56, height: 56)
+                    )
+                    .frame(width: 48, height: 48)
 
-                    Image(systemName: "thermometer.medium")
-                        .font(.title2.weight(.medium))
-                        .foregroundStyle(MetricTheme.warmGlow)
-                        .symbolRenderingMode(.hierarchical)
+                Image(systemName: AppModule.learnInsideOutside.systemImage)
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(MetricTheme.warmGlow)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(AppModule.learnInsideOutside.title)
+                    .font(.headline)
+                    .foregroundStyle(MetricTheme.textPrimary)
+
+                if !isUnlocked {
+                    Text("Complete Inside/Outside Basics first")
+                        .font(.caption)
+                        .foregroundStyle(MetricTheme.textTertiary)
+                } else if hasProgress {
+                    Text("\(round.title) · \(learned)/\(round.cards.count) learned")
+                        .font(.caption)
+                        .foregroundStyle(MetricTheme.textSecondary)
+                } else {
+                    Text(AppModule.learnInsideOutside.subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(MetricTheme.textSecondary)
                 }
+            }
 
-                Spacer()
+            Spacer()
 
+            if !isUnlocked {
+                Label("Locked", systemImage: "lock.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(MetricTheme.textTertiary)
+            } else {
                 Image(systemName: "arrow.up.right")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(MetricTheme.textTertiary)
-                    .padding(10)
-                    .background(Circle().fill(Color.white.opacity(0.08)))
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Temperature")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(MetricTheme.textPrimary)
-
-                Text("Celsius ↔ Fahrenheit intuition")
-                    .font(.subheadline)
-                    .foregroundStyle(MetricTheme.textSecondary)
-            }
-
-            if hasProgress {
-                HStack(spacing: 10) {
-                    Label(round.title, systemImage: "circle.grid.2x2")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(MetricTheme.textSecondary)
-
-                    Spacer()
-
-                    Text("\(learned)/\(round.cards.count) learned")
-                        .font(.caption.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(MetricTheme.warmGlow)
-                }
-                .padding(.top, 4)
-            } else {
-                Text("Start with environmental temperatures")
-                    .font(.caption)
-                    .foregroundStyle(MetricTheme.textTertiary)
             }
         }
-        .padding(22)
+        .padding(20)
         .background {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
-                            MetricTheme.warmEmber.opacity(0.22),
+                            MetricTheme.warmEmber.opacity(isUnlocked ? 0.22 : 0.08),
                             MetricTheme.inkSoft.opacity(0.85),
                         ],
                         startPoint: .topLeading,
@@ -185,10 +274,9 @@ private struct TemperatureModuleCard: View {
                     )
                 )
                 .overlay {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .strokeBorder(MetricTheme.glassStroke, lineWidth: 1)
                 }
-                .shadow(color: MetricTheme.warmEmber.opacity(0.15), radius: 24, y: 12)
         }
     }
 }
@@ -197,7 +285,6 @@ private struct ModulePreviewCard: View {
     let title: String
     let subtitle: String
     let systemImage: String
-    let gradient: LinearGradient
 
     var body: some View {
         HStack(spacing: 16) {
@@ -228,7 +315,7 @@ private struct ModulePreviewCard: View {
         .padding(18)
         .background {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(gradient.opacity(0.35))
+                .fill(MetricTheme.inkSoft.opacity(0.45))
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)

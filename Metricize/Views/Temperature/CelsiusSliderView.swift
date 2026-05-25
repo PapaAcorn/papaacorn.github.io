@@ -1,42 +1,42 @@
 //
-//  ThermometerSliderView.swift
+//  CelsiusSliderView.swift
 //  Metricize
 //
 
 import SwiftUI
 
-struct ThermometerSliderView: View {
-    let celsius: Int
-    @Binding var selectedFahrenheit: Double
+struct CelsiusSliderView: View {
+    let fahrenheit: Int
+    @Binding var selectedCelsius: Double
     let isEnabled: Bool
 
-    private let range = Double(TemperatureGameConstants.fahrenheitMin)...Double(TemperatureGameConstants.fahrenheitMax)
+    private let range = Double(TemperatureGameConstants.celsiusMin)...Double(TemperatureGameConstants.celsiusMax)
 
     private var guessHue: Color {
-        MetricTheme.fahrenheitHue(selectedFahrenheit)
+        MetricTheme.palette(forCelsius: Int(selectedCelsius.rounded())).glow
     }
 
     var body: some View {
         VStack(spacing: 28) {
             TemperaturePromptView(
-                value: celsius,
-                unit: "°C",
-                hint: "Drag the marker on the Fahrenheit scale"
+                value: fahrenheit,
+                unit: "°F",
+                hint: "Drag the marker on the Celsius scale"
             )
 
             HStack(alignment: .center, spacing: 28) {
-                thermometerTrack
-                fahrenheitReadout
+                celsiusTrack
+                celsiusReadout
             }
             .frame(maxHeight: 340)
         }
         .padding(.horizontal, 8)
     }
 
-    private var thermometerTrack: some View {
+    private var celsiusTrack: some View {
         GeometryReader { geometry in
             let height = geometry.size.height
-            let knobY = yPosition(for: selectedFahrenheit, in: height)
+            let knobY = yPosition(for: selectedCelsius, in: height)
             let fillHeight = max(0, height - knobY - 36)
 
             ZStack {
@@ -117,16 +117,16 @@ struct ThermometerSliderView: View {
                         .onChanged { value in
                             guard isEnabled else { return }
                             let clampedY = min(max(value.location.y, 12), height - 36)
-                            selectedFahrenheit = fahrenheit(for: clampedY, in: height)
+                            selectedCelsius = celsius(for: clampedY, in: height)
                         }
                 )
-                .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.78), value: selectedFahrenheit)
+                .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.78), value: selectedCelsius)
             }
         }
         .frame(width: 80)
     }
 
-    private var fahrenheitReadout: some View {
+    private var celsiusReadout: some View {
         VStack(spacing: 12) {
             Text("Your guess")
                 .font(.caption.weight(.semibold))
@@ -134,12 +134,12 @@ struct ThermometerSliderView: View {
                 .foregroundStyle(MetricTheme.textTertiary)
 
             VStack(spacing: 2) {
-                Text("\(Int(selectedFahrenheit.rounded()))")
+                Text("\(Int(selectedCelsius.rounded()))")
                     .font(.system(size: 52, weight: .thin, design: .rounded))
                     .foregroundStyle(guessHue)
                     .contentTransition(.numericText())
 
-                Text("°F")
+                Text("°C")
                     .font(.title3.weight(.light))
                     .foregroundStyle(MetricTheme.textSecondary)
             }
@@ -155,8 +155,8 @@ struct ThermometerSliderView: View {
     }
 
     private func tickMarks(in height: CGFloat) -> some View {
-        let ticks = [110, 86, 68, 50, 32, 14, 0, -10]
-        let majorTicks: Set<Int> = [110, 68, 32, 0, -10]
+        let ticks = [43, 30, 20, 10, 0, -10, -23]
+        let majorTicks: Set<Int> = [43, 20, 0, -23]
         return ZStack(alignment: .topLeading) {
             ForEach(ticks, id: \.self) { tick in
                 HStack(spacing: 6) {
@@ -172,12 +172,12 @@ struct ThermometerSliderView: View {
         }
     }
 
-    private func yPosition(for fahrenheit: Double, in height: CGFloat) -> CGFloat {
-        let normalized = (fahrenheit - range.lowerBound) / (range.upperBound - range.lowerBound)
+    private func yPosition(for celsius: Double, in height: CGFloat) -> CGFloat {
+        let normalized = (celsius - range.lowerBound) / (range.upperBound - range.lowerBound)
         return height - CGFloat(normalized) * (height - 48) - 24
     }
 
-    private func fahrenheit(for y: CGFloat, in height: CGFloat) -> Double {
+    private func celsius(for y: CGFloat, in height: CGFloat) -> Double {
         let normalized = 1 - (y - 24) / (height - 48)
         let value = range.lowerBound + Double(normalized) * (range.upperBound - range.lowerBound)
         return min(max(value, range.lowerBound), range.upperBound)
