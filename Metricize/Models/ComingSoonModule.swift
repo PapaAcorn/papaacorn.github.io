@@ -10,7 +10,6 @@ enum ComingSoonModule: CaseIterable, Identifiable {
     case atTheGym
     case onTheRoad
     case hereToThere
-    case conversionCalculator
 
     var id: String { title }
 
@@ -20,7 +19,6 @@ enum ComingSoonModule: CaseIterable, Identifiable {
         case .atTheGym: "At the gym"
         case .onTheRoad: "On the Road"
         case .hereToThere: "Here to There"
-        case .conversionCalculator: "Conversion Calculator"
         }
     }
 
@@ -30,18 +28,19 @@ enum ComingSoonModule: CaseIterable, Identifiable {
         case .atTheGym: "Heavy Weights and Treadmill Speeds"
         case .onTheRoad: "Speed and Map Distance"
         case .hereToThere: "Distance by Vibe"
-        case .conversionCalculator: "You'll need it eventually."
         }
     }
 }
 
 enum ModuleTileItem: Identifiable {
     case insideAndOut
+    case conversionCalculator
     case comingSoon(ComingSoonModule)
 
     var id: String {
         switch self {
         case .insideAndOut: "inside-and-out"
+        case .conversionCalculator: "conversion-calculator"
         case .comingSoon(let module): module.id
         }
     }
@@ -49,6 +48,7 @@ enum ModuleTileItem: Identifiable {
     var title: String {
         switch self {
         case .insideAndOut: AppModule.insideAndOut.title
+        case .conversionCalculator: AppModule.conversionCalculator.title
         case .comingSoon(let module): module.title
         }
     }
@@ -56,11 +56,12 @@ enum ModuleTileItem: Identifiable {
     var subtitle: String? {
         switch self {
         case .insideAndOut: AppModule.insideAndOut.subtitle
+        case .conversionCalculator: AppModule.conversionCalculator.subtitle
         case .comingSoon(let module): module.subtitle
         }
     }
 
     static var homeGrid: [ModuleTileItem] {
-        [.insideAndOut] + ComingSoonModule.allCases.map { .comingSoon($0) }
+        [.insideAndOut, .conversionCalculator] + ComingSoonModule.allCases.map { .comingSoon($0) }
     }
 }

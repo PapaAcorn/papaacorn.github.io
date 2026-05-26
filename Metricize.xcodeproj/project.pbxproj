@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		1BB000082FC27DC0003B346E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1AA758A02FC27DBA003B346E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1AA758A72FC27DBA003B346E;
+			remoteInfo = Metricize;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		1AA758A82FC27DBA003B346E /* Metricize.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Metricize.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1BB000012FC27DC0003B346E /* MetricizeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MetricizeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = Metricize;
 			sourceTree = "<group>";
 		};
+		1BB000022FC27DC0003B346E /* MetricizeTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MetricizeTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		1AA758A52FC27DBA003B346E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1BB000052FC27DC0003B346E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				1AA758AA2FC27DBA003B346E /* Metricize */,
+				1BB000022FC27DC0003B346E /* MetricizeTests */,
 				1AA758A92FC27DBA003B346E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				1AA758A82FC27DBA003B346E /* Metricize.app */,
+				1BB000012FC27DC0003B346E /* MetricizeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,29 @@
 			productReference = 1AA758A82FC27DBA003B346E /* Metricize.app */;
 			productType = "com.apple.product-type.application";
 		};
+		1BB000032FC27DC0003B346E /* MetricizeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1BB0000B2FC27DC0003B346E /* Build configuration list for PBXNativeTarget "MetricizeTests" */;
+			buildPhases = (
+				1BB000042FC27DC0003B346E /* Sources */,
+				1BB000052FC27DC0003B346E /* Frameworks */,
+				1BB000062FC27DC0003B346E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1BB000072FC27DC0003B346E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1BB000022FC27DC0003B346E /* MetricizeTests */,
+			);
+			name = MetricizeTests;
+			packageProductDependencies = (
+			);
+			productName = MetricizeTests;
+			productReference = 1BB000012FC27DC0003B346E /* MetricizeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +130,10 @@
 				TargetAttributes = {
 					1AA758A72FC27DBA003B346E = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					1BB000032FC27DC0003B346E = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = 1AA758A72FC27DBA003B346E;
 					};
 				};
 			};
@@ -100,12 +152,20 @@
 			projectRoot = "";
 			targets = (
 				1AA758A72FC27DBA003B346E /* Metricize */,
+				1BB000032FC27DC0003B346E /* MetricizeTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1AA758A62FC27DBA003B346E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1BB000062FC27DC0003B346E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +182,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		1BB000042FC27DC0003B346E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1BB000072FC27DC0003B346E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1AA758A72FC27DBA003B346E /* Metricize */;
+			targetProxy = 1BB000082FC27DC0003B346E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1AA758B12FC27DC3003B346E /* Debug */ = {
@@ -247,9 +322,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
+				"ENABLE_APP_SANDBOX[sdk=iphoneos*]" = NO;
+				"ENABLE_APP_SANDBOX[sdk=iphonesimulator*]" = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Supporting/MetricizeInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Metricize Me";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -290,9 +368,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
+				"ENABLE_APP_SANDBOX[sdk=iphoneos*]" = NO;
+				"ENABLE_APP_SANDBOX[sdk=iphonesimulator*]" = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Supporting/MetricizeInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Metricize Me";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -325,6 +406,46 @@
 			};
 			name = Release;
 		};
+		1BB0000C2FC27DC0003B346E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = papaacorn.MetricizeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Metricize.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Metricize";
+			};
+			name = Debug;
+		};
+		1BB0000D2FC27DC0003B346E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = papaacorn.MetricizeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Metricize.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Metricize";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -342,6 +463,15 @@
 			buildConfigurations = (
 				1AA758B42FC27DC3003B346E /* Debug */,
 				1AA758B52FC27DC3003B346E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1BB0000B2FC27DC0003B346E /* Build configuration list for PBXNativeTarget "MetricizeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1BB0000C2FC27DC0003B346E /* Debug */,
+				1BB0000D2FC27DC0003B346E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -17,13 +17,14 @@ enum ModuleTileIconKind {
         switch tile {
         case .insideAndOut:
             self = .insideAndOut
+        case .conversionCalculator:
+            self = .calculator
         case .comingSoon(let module):
             switch module {
             case .inTheKitchen: self = .kitchen
             case .atTheGym: self = .gym
             case .onTheRoad: self = .onTheRoad
             case .hereToThere: self = .hereToThere
-            case .conversionCalculator: self = .calculator
             }
         }
     }

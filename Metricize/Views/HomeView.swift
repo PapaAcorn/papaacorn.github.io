@@ -10,6 +10,8 @@ struct HomeView: View {
 
     @State private var temperatureProgress = TemperatureProgressStore()
     @State private var unlockStore = ModuleUnlockStore()
+    @State private var navigation = AppNavigationStore.shared
+    @State private var openConversionCalculator = false
 
     private let tileColumns = [
         GridItem(.flexible(), spacing: 16),
@@ -60,18 +62,33 @@ struct HomeView: View {
                 }
             }
             #endif
+            .onAppear(perform: handlePendingDeepLink)
+            .onChange(of: navigation.pendingDeepLink) { _, _ in
+                handlePendingDeepLink()
+            }
+            .navigationDestination(isPresented: $openConversionCalculator) {
+                ConversionCalculatorView()
+            }
+        }
+    }
+
+    private func handlePendingDeepLink() {
+        if navigation.pendingDeepLink == .conversionCalculator {
+            _ = navigation.consumePendingDeepLink()
+            openConversionCalculator = true
         }
     }
 
     private var heroSection: some View {
-        HStack(spacing: 0) {
-            Text("Metricize ")
+        (
+            Text("Metricize")
                 .font(AppFont.sora(size: 38, weight: .bold))
                 .foregroundStyle(palette.textPrimary)
+            +
             Text("Me")
                 .font(AppFont.sora(size: 42, weight: .heavy))
                 .foregroundStyle(MetricTheme.warmEmber)
-        }
+        )
         .padding(.top, 12)
     }
 
@@ -96,9 +113,10 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 14) {
             sectionLabel("Modules")
 
-            LazyVGrid(columns: tileColumns, spacing: 20) {
+            LazyVGrid(columns: tileColumns, alignment: .center, spacing: 20) {
                 ForEach(ModuleTileItem.homeGrid) { tile in
                     moduleTile(for: tile)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
         }
@@ -124,9 +142,16 @@ struct HomeView: View {
                 .buttonStyle(.plain)
             } else {
                 ModuleTileView(tile: tile, isLocked: true, progressCaption: nil)
-                    .opacity(0.45)
                     .allowsHitTesting(false)
             }
+
+        case .conversionCalculator:
+            NavigationLink {
+                ConversionCalculatorView()
+            } label: {
+                ModuleTileView(tile: tile, isLocked: false, progressCaption: nil)
+            }
+            .buttonStyle(.plain)
 
         case .comingSoon:
             ModuleTileView(tile: tile, isLocked: false, progressCaption: nil)
@@ -176,6 +201,8 @@ struct HomeView: View {
                 unlockStore: unlockStore,
                 progressStore: temperatureProgress
             )
+        case .conversionCalculator:
+            ConversionCalculatorView()
         case .insideOutsideBasics, .learnInsideOutside:
             InsideAndOutModuleView(
                 unlockStore: unlockStore,
@@ -273,15 +300,12 @@ private struct ModuleTileView: View {
                             .frame(width: geometry.size.width, height: geometry.size.height)
                     }
                 }
-                .overlay(alignment: .topTrailing) {
-                    badgeOverlay
-                }
-                .opacity(isLocked ? 0.45 : isComingSoon ? 0.72 : 1)
+                .opacity(isComingSoon ? 0.72 : 1)
 
             VStack(spacing: 3) {
                 Text(tile.title)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(isComingSoon || isLocked ? palette.textSecondary : palette.textPrimary)
+                    .foregroundStyle(isComingSoon ? palette.textSecondary : palette.textPrimary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -300,6 +324,9 @@ private struct ModuleTileView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+        }
+        .overlay(alignment: .topTrailing) {
+            badgeOverlay
         }
     }
 

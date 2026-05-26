@@ -24,13 +24,16 @@ struct OnboardingModuleView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let isLandscape = geometry.size.width > geometry.size.height
+
             VStack(spacing: 0) {
                 progressHeader
                     .padding(.horizontal, 24)
-                    .padding(.top, 16)
-                    .padding(.bottom, 20)
+                    .padding(.top, isLandscape ? 4 : 16)
+                    .padding(.bottom, isLandscape ? 8 : 20)
 
                 pageView(pages[pageIndex], in: geometry)
+                    .frame(maxHeight: .infinity)
                     .animation(.easeInOut, value: pageIndex)
                     .transition(.asymmetric(
                         insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -38,11 +41,15 @@ struct OnboardingModuleView: View {
                     ))
                     .id(pageIndex)
 
-                PrimaryActionButton(title: isLastPage ? finalButtonTitle : "Next") {
+                PrimaryActionButton(
+                    title: isLastPage ? finalButtonTitle : "Next",
+                    compact: isLandscape
+                ) {
                     advance()
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, max(24, geometry.safeAreaInsets.bottom + 12))
+                .padding(.top, isLandscape ? 8 : 0)
+                .padding(.bottom, max(isLandscape ? 12 : 24, geometry.safeAreaInsets.bottom + (isLandscape ? 8 : 12)))
             }
         }
         .navigationTitle(module.title)
@@ -264,9 +271,9 @@ private struct OnboardingPageContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.horizontal, max(28, geometry.size.width * 0.08))
-        .padding(.vertical, 8)
+        .padding(.vertical, isLandscape ? 4 : 8)
         .padding(.bottom, showsMoreBelow ? 36 : 8)
-        .frame(minHeight: geometry.size.height * 0.55, alignment: .center)
+        .frame(minHeight: isLandscape ? 0 : geometry.size.height * 0.55, alignment: .center)
     }
 
     private var scrollMoreIndicator: some View {

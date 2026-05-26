@@ -222,7 +222,7 @@ struct TemperatureGameView: View {
 
     @ViewBuilder
     private func stackedSliderChallenge(for card: TemperatureCard, layout: ChallengeLayout, compact: Bool) -> some View {
-        VStack(spacing: compact ? 12 : 20) {
+        VStack(spacing: compact ? 16 : 32) {
             sliderView(for: card, layout: layout, compact: compact)
 
             PrimaryActionButton(
@@ -242,7 +242,7 @@ struct TemperatureGameView: View {
             sliderPrompt(for: card, compact: compact)
                 .frame(maxWidth: .infinity)
 
-            VStack(spacing: compact ? 10 : 20) {
+            VStack(spacing: compact ? 14 : 28) {
                 sliderView(for: card, layout: .sideBySide, compact: compact)
 
                 PrimaryActionButton(

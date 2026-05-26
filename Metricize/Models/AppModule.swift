@@ -8,6 +8,7 @@ import Foundation
 enum AppModule: String, Codable, Identifiable {
     case howToUse
     case insideAndOut
+    case conversionCalculator
     case insideOutsideBasics
     case learnInsideOutside
 
@@ -17,6 +18,7 @@ enum AppModule: String, Codable, Identifiable {
         switch self {
         case .howToUse: "How to Use this App"
         case .insideAndOut: "Inside & Out"
+        case .conversionCalculator: "Conversion Calculator"
         case .insideOutsideBasics: "Inside/Outside Basics"
         case .learnInsideOutside: "Learn Inside/Outside"
         }
@@ -26,6 +28,7 @@ enum AppModule: String, Codable, Identifiable {
         switch self {
         case .howToUse: "What this app is — and isn't"
         case .insideAndOut: "Ambient Temperatures"
+        case .conversionCalculator: "Convert & calculate"
         case .insideOutsideBasics: "Celsius fundamentals and milestones"
         case .learnInsideOutside: "Build your ambient temperature intuition"
         }
@@ -35,6 +38,7 @@ enum AppModule: String, Codable, Identifiable {
         switch self {
         case .howToUse: "book.pages"
         case .insideAndOut: "thermometer.medium"
+        case .conversionCalculator: "function"
         case .insideOutsideBasics: "lightbulb"
         case .learnInsideOutside: "thermometer.medium"
         }
@@ -51,6 +55,7 @@ enum AppModule: String, Codable, Identifiable {
         switch self {
         case .howToUse: nil
         case .insideAndOut: .howToUse
+        case .conversionCalculator: nil
         case .insideOutsideBasics, .learnInsideOutside: nil
         }
     }

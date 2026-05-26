@@ -19,6 +19,7 @@ final class ModuleUnlockStore {
     }
 
     func isUnlocked(_ module: AppModule) -> Bool {
+        if module == .conversionCalculator { return true }
         if module == .insideAndOut {
             return isComplete(.howToUse)
                 || isComplete(.insideOutsideBasics)
