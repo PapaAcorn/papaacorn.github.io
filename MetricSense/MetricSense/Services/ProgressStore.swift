@@ -4,9 +4,15 @@ import Foundation
 final class ProgressStore: ObservableObject {
     @Published private(set) var progress: ProgressByQuestion = [:]
 
-    private let storageKey = "metric-sense-temperature-progress-v1"
+    private let defaults: UserDefaults
+    private let storageKey: String
 
-    init() {
+    init(
+        defaults: UserDefaults = .standard,
+        storageKey: String = "metric-sense-temperature-progress-v1"
+    ) {
+        self.defaults = defaults
+        self.storageKey = storageKey
         load()
     }
 
@@ -27,7 +33,7 @@ final class ProgressStore: ObservableObject {
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
+        guard let data = defaults.data(forKey: storageKey) else { return }
         if let decoded = try? JSONDecoder().decode(ProgressByQuestion.self, from: data) {
             progress = decoded
         }
@@ -35,6 +41,6 @@ final class ProgressStore: ObservableObject {
 
     private func save() {
         guard let data = try? JSONEncoder().encode(progress) else { return }
-        UserDefaults.standard.set(data, forKey: storageKey)
+        defaults.set(data, forKey: storageKey)
     }
 }

@@ -103,6 +103,7 @@ enum GameEngine {
 
         var options = Set<Int>([target])
         for offset in offsets.shuffled() {
+            guard options.count < 4 else { break }
             let candidate = target + offset
             if (-30...50).contains(candidate) {
                 options.insert(candidate)

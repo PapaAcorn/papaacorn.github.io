@@ -18,7 +18,30 @@
 		DB92F70AC4DC40738E80A63B /* TipInterstitialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136BCF3A03D34D9FBE3267B3 /* TipInterstitialView.swift */; };
 		E20BE617F2BA499EBD049A3A /* QuestionProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 915A17A22F004936AA6F3302 /* QuestionProgress.swift */; };
 		F3FAFD57C0004C6A8B3DBEEF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5363A611B3A9433BB0232E92 /* Assets.xcassets */; };
+		A10000000000000000000001 /* CalculatorRegressionCases.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000101 /* CalculatorRegressionCases.swift */; };
+		A10000000000000000000002 /* TemperatureDeckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000102 /* TemperatureDeckTests.swift */; };
+		A10000000000000000000003 /* GameEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000103 /* GameEngineTests.swift */; };
+		A10000000000000000000004 /* ProgressStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000104 /* ProgressStoreTests.swift */; };
+		A10000000000000000000005 /* TemperatureGameViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000105 /* TemperatureGameViewModelTests.swift */; };
+		A10000000000000000000006 /* TemperatureTrainerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000106 /* TemperatureTrainerUITests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000501 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 12B429C2D982456BA978A7C3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1B0AC866C3FE4D3FAF77FA9D;
+			remoteInfo = MetricSense;
+		};
+		A10000000000000000000502 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 12B429C2D982456BA978A7C3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1B0AC866C3FE4D3FAF77FA9D;
+			remoteInfo = MetricSense;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		136BCF3A03D34D9FBE3267B3 /* TipInterstitialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipInterstitialView.swift; sourceTree = "<group>"; };
@@ -34,10 +57,32 @@
 		EF42E42AC2C24A559744818B /* TemperatureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureCard.swift; sourceTree = "<group>"; };
 		F2954AAF36FE400BB4E25F09 /* MultipleChoiceQuestionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultipleChoiceQuestionView.swift; sourceTree = "<group>"; };
 		F2A7436A398C4F4EA054281A /* MetricSenseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricSenseApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000101 /* CalculatorRegressionCases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorRegressionCases.swift; sourceTree = "<group>"; };
+		A10000000000000000000102 /* TemperatureDeckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureDeckTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000103 /* GameEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngineTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000104 /* ProgressStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressStoreTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000105 /* TemperatureGameViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureGameViewModelTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000106 /* TemperatureTrainerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureTrainerUITests.swift; sourceTree = "<group>"; };
+		A10000000000000000000107 /* MetricSenseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MetricSenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000108 /* MetricSenseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MetricSenseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C1D2E3F4A5B6478990ABCDEF1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000402 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000405 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -102,6 +147,8 @@
 			isa = PBXGroup;
 			children = (
 				12B429C2D982456BA978A7C4 /* MetricSense */,
+				A10000000000000000000201 /* MetricSenseTests */,
+				A10000000000000000000202 /* MetricSenseUITests */,
 				12B429C2D982456BA978A7CA /* Products */,
 			);
 			sourceTree = "<group>";
@@ -110,8 +157,30 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F6478990ABCDEF /* MetricSense.app */,
+				A10000000000000000000107 /* MetricSenseTests.xctest */,
+				A10000000000000000000108 /* MetricSenseUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000201 /* MetricSenseTests */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000101 /* CalculatorRegressionCases.swift */,
+				A10000000000000000000102 /* TemperatureDeckTests.swift */,
+				A10000000000000000000103 /* GameEngineTests.swift */,
+				A10000000000000000000104 /* ProgressStoreTests.swift */,
+				A10000000000000000000105 /* TemperatureGameViewModelTests.swift */,
+			);
+			path = MetricSenseTests;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000202 /* MetricSenseUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000106 /* TemperatureTrainerUITests.swift */,
+			);
+			path = MetricSenseUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -133,6 +202,42 @@
 			productName = MetricSense;
 			productReference = A1B2C3D4E5F6478990ABCDEF /* MetricSense.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000301 /* MetricSenseTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000801 /* Build configuration list for PBXNativeTarget "MetricSenseTests" */;
+			buildPhases = (
+				A10000000000000000000401 /* Sources */,
+				A10000000000000000000402 /* Frameworks */,
+				A10000000000000000000403 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000503 /* PBXTargetDependency */,
+			);
+			name = MetricSenseTests;
+			productName = MetricSenseTests;
+			productReference = A10000000000000000000107 /* MetricSenseTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A10000000000000000000302 /* MetricSenseUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000802 /* Build configuration list for PBXNativeTarget "MetricSenseUITests" */;
+			buildPhases = (
+				A10000000000000000000404 /* Sources */,
+				A10000000000000000000405 /* Frameworks */,
+				A10000000000000000000406 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000504 /* PBXTargetDependency */,
+			);
+			name = MetricSenseUITests;
+			productName = MetricSenseUITests;
+			productReference = A10000000000000000000108 /* MetricSenseUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -163,6 +268,8 @@
 			projectRoot = "";
 			targets = (
 				1B0AC866C3FE4D3FAF77FA9D /* MetricSense */,
+				A10000000000000000000301 /* MetricSenseTests */,
+				A10000000000000000000302 /* MetricSenseUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -173,6 +280,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				F3FAFD57C0004C6A8B3DBEEF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000403 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000406 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -196,7 +317,40 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000401 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* CalculatorRegressionCases.swift in Sources */,
+				A10000000000000000000002 /* TemperatureDeckTests.swift in Sources */,
+				A10000000000000000000003 /* GameEngineTests.swift in Sources */,
+				A10000000000000000000004 /* ProgressStoreTests.swift in Sources */,
+				A10000000000000000000005 /* TemperatureGameViewModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000404 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000006 /* TemperatureTrainerUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10000000000000000000503 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1B0AC866C3FE4D3FAF77FA9D /* MetricSense */;
+			targetProxy = A10000000000000000000501 /* PBXContainerItemProxy */;
+		};
+		A10000000000000000000504 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1B0AC866C3FE4D3FAF77FA9D /* MetricSense */;
+			targetProxy = A10000000000000000000502 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		12B429C2D982456BA978A7CF /* Debug */ = {
@@ -291,6 +445,94 @@
 			};
 			name = Release;
 		};
+		A10000000000000000000701 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.papaacorn.metricsenseTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MetricSense.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MetricSense";
+			};
+			name = Debug;
+		};
+		A10000000000000000000702 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.papaacorn.metricsenseTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MetricSense.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MetricSense";
+			};
+			name = Release;
+		};
+		A10000000000000000000703 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.papaacorn.metricsenseUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = MetricSense;
+			};
+			name = Debug;
+		};
+		A10000000000000000000704 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.papaacorn.metricsenseUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = MetricSense;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -308,6 +550,24 @@
 			buildConfigurations = (
 				12B429C2D982456BA978A7CF /* Debug */,
 				12B429C2D982456BA978A7D0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000801 /* Build configuration list for PBXNativeTarget "MetricSenseTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000701 /* Debug */,
+				A10000000000000000000702 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000802 /* Build configuration list for PBXNativeTarget "MetricSenseUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000703 /* Debug */,
+				A10000000000000000000704 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
