@@ -1,4 +1,4 @@
-# Metric Sense
+# MetricizeMe
 
 An offline-first learning app that helps people switching from imperial to metric build quick, intuitive equivalencies — starting with everyday **environmental temperatures** (-15°F through 110°F).
 
