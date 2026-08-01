@@ -23,65 +23,73 @@ struct RoundTipView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        GeometryReader { geometry in
+            let isLandscape = geometry.size.width > geometry.size.height
 
-            ZStack {
-                Circle()
-                    .fill(MetricTheme.warmGlow.opacity(0.12))
-                    .frame(width: 140, height: 140)
-                    .blur(radius: 30)
-                    .scaleEffect(glow ? 1.15 : 0.9)
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: isLandscape ? 16 : 24) {
+                        ZStack {
+                            Circle()
+                                .fill(MetricTheme.warmGlow.opacity(0.12))
+                                .frame(width: isLandscape ? 100 : 140, height: isLandscape ? 100 : 140)
+                                .blur(radius: 30)
+                                .scaleEffect(glow ? 1.15 : 0.9)
 
-                Image(systemName: "sparkles")
-                    .font(.system(size: 44, weight: .light))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [MetricTheme.warmGlow, MetricTheme.coolFrost],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .symbolEffect(.pulse)
+                            Image(systemName: "sparkles")
+                                .font(.system(size: isLandscape ? 34 : 44, weight: .light))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [MetricTheme.warmGlow, MetricTheme.coolFrost],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .symbolEffect(.pulse)
+                        }
+                        .padding(.top, isLandscape ? 8 : 16)
+
+                        VStack(spacing: isLandscape ? 12 : 16) {
+                            Text("Before you continue")
+                                .font(.caption.weight(.semibold))
+                                .tracking(1.6)
+                                .foregroundStyle(palette.textTertiary)
+
+                            Text(roundTitle)
+                                .font(isLandscape ? .title2.weight(.semibold) : .title.weight(.semibold))
+                                .foregroundStyle(palette.textPrimary)
+                                .multilineTextAlignment(.center)
+
+                            Text(tips[visibleTipIndex])
+                                .font(isLandscape ? .body : .title3.weight(.regular))
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(palette.textSecondary)
+                                .lineSpacing(4)
+                                .padding(.horizontal, 28)
+                                .frame(minHeight: isLandscape ? 60 : 100)
+                                .id(visibleTipIndex)
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .offset(y: 12)),
+                                    removal: .opacity.combined(with: .offset(y: -12))
+                                ))
+                        }
+                        .animation(.easeInOut(duration: 0.45), value: visibleTipIndex)
+
+                        if tips.count > 1 {
+                            tipProgress
+                                .padding(.top, isLandscape ? 16 : 24)
+                                .padding(.horizontal, 48)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 8)
+                }
+
+                PrimaryActionButton(title: actionTitle, compact: isLandscape, action: advance)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .padding(.bottom, max(isLandscape ? 12 : 32, geometry.safeAreaInsets.bottom + 8))
             }
-            .padding(.bottom, 32)
-
-            VStack(spacing: 16) {
-                Text("Before you continue")
-                    .font(.caption.weight(.semibold))
-                    .tracking(1.6)
-                    .foregroundStyle(palette.textTertiary)
-
-                Text(roundTitle)
-                    .font(.title.weight(.semibold))
-                    .foregroundStyle(palette.textPrimary)
-
-                Text(tips[visibleTipIndex])
-                    .font(.title3.weight(.regular))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(palette.textSecondary)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 28)
-                    .frame(minHeight: 100)
-                    .id(visibleTipIndex)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .offset(y: 12)),
-                        removal: .opacity.combined(with: .offset(y: -12))
-                    ))
-            }
-            .animation(.easeInOut(duration: 0.45), value: visibleTipIndex)
-
-            if tips.count > 1 {
-                tipProgress
-                    .padding(.top, 36)
-                    .padding(.horizontal, 48)
-            }
-
-            Spacer()
-
-            PrimaryActionButton(title: actionTitle, action: advance)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
         }
         .onAppear {
             glow = true

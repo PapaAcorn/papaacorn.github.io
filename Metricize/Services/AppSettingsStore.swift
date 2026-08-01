@@ -11,19 +11,11 @@ final class AppSettingsStore {
     private let appearanceKey = "metricize.settings.appearance"
 
     var appearanceMode: AppAppearanceMode {
-        didSet { save() }
+        didSet { saveAppearance() }
     }
 
-    var requiredConsecutiveCorrect: Int {
-        didSet {
-            let clamped = min(max(requiredConsecutiveCorrect, 1), 5)
-            if clamped != requiredConsecutiveCorrect {
-                requiredConsecutiveCorrect = clamped
-                return
-            }
-            LearningPreferences.saveRequiredConsecutiveCorrect(clamped)
-        }
-    }
+    private(set) var requiredConsecutiveCorrect: Int
+    private(set) var accuracyToleranceDegrees: Int
 
     var preferredColorScheme: ColorScheme? {
         appearanceMode.preferredColorScheme
@@ -37,9 +29,24 @@ final class AppSettingsStore {
         }
 
         requiredConsecutiveCorrect = LearningPreferences.requiredConsecutiveCorrect
+        accuracyToleranceDegrees = LearningPreferences.accuracyToleranceDegrees
     }
 
-    private func save() {
+    func setRequiredConsecutiveCorrect(_ value: Int) {
+        let clamped = min(max(value, 1), 5)
+        guard clamped != requiredConsecutiveCorrect else { return }
+        requiredConsecutiveCorrect = clamped
+        LearningPreferences.saveRequiredConsecutiveCorrect(clamped)
+    }
+
+    func setAccuracyToleranceDegrees(_ value: Int) {
+        let clamped = min(max(value, 0), 5)
+        guard clamped != accuracyToleranceDegrees else { return }
+        accuracyToleranceDegrees = clamped
+        LearningPreferences.saveAccuracyToleranceDegrees(clamped)
+    }
+
+    private func saveAppearance() {
         UserDefaults.standard.set(appearanceMode.rawValue, forKey: appearanceKey)
     }
 }

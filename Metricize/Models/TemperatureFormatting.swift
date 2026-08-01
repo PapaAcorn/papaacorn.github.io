@@ -14,10 +14,6 @@ enum TemperatureFormatting {
         "\(fahrenheit)°F"
     }
 
-    static func symbol(value: Int, unit: String) -> String {
-        "\(value)\(unit)"
-    }
-
     static func degreesPhrase(value: Int, unit: String) -> String {
         switch unit {
         case "°F", "F": "\(value) degrees Fahrenheit"

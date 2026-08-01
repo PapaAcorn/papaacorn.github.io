@@ -12,17 +12,21 @@ struct TemperatureGameView: View {
     @State private var multipleChoiceOptions: [Int] = []
     @State private var showResetConfirmation = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.metricPalette) private var palette
 
     var onResetModule: (() -> Void)?
     var onReviewBasics: (() -> Void)?
 
     init(
-        progressStore: TemperatureProgressStore = TemperatureProgressStore(),
+        progressStore: TemperatureProgressStore,
+        settings: AppSettingsStore,
         onResetModule: (() -> Void)? = nil,
         onReviewBasics: (() -> Void)? = nil
     ) {
-        _viewModel = State(initialValue: TemperatureGameViewModel(progressStore: progressStore))
+        _viewModel = State(
+            initialValue: TemperatureGameViewModel(progressStore: progressStore, settings: settings)
+        )
         self.onResetModule = onResetModule
         self.onReviewBasics = onReviewBasics
     }
@@ -35,41 +39,56 @@ struct TemperatureGameView: View {
     }
 
     private var roundLabel: String {
+        if progressStore.isFinalExamRound(progressStore.currentRoundIndex) {
+            if let session = progressStore.finalExamSession, !session.isComplete {
+                let current = min(session.currentQuestionIndex + 1, session.totalQuestions)
+                return "Final Exam · Question \(current) of \(session.totalQuestions)"
+            }
+            return "Final Exam"
+        }
         let major = progressStore.currentRoundIndex
         let minor = progressStore.currentSubRoundIndex
-        let totalMajor = TemperatureCurriculum.rounds.count
-        let totalMinor = TemperatureGameConstants.subRoundsPerRound
-        return "Round \(TemperatureCurriculum.subRoundLabel(majorRoundIndex: major, subRoundIndex: minor)) of \(totalMajor).\(totalMinor)"
+        return "Round \(TemperatureCurriculum.subRoundLabel(majorRoundIndex: major, subRoundIndex: minor))"
     }
 
     var body: some View {
         GeometryReader { geometry in
-            let isLandscape = ChallengeLayout.current(size: geometry.size) == .sideBySide
+            let challengeLayout = ChallengeLayout.current(size: geometry.size)
+            let isPhoneLandscape = verticalSizeClass == .compact && challengeLayout == .sideBySide
 
             VStack(spacing: 0) {
                 if !isFullScreenPhase {
-                    RoundProgressHeader(
-                        roundLabel: roundLabel,
-                        learned: progressStore.learnedCountInCurrentSubRound(),
-                        total: progressStore.totalCountInCurrentSubRound(),
-                        compact: isLandscape
-                    )
+                    progressChrome(isPhoneLandscape: isPhoneLandscape)
 
-                    if !isLandscape {
+                    if !isPhoneLandscape {
                         Spacer()
-                            .frame(height: 20)
+                            .frame(height: 12)
                     }
                 }
 
                 Group {
                     switch viewModel.phase {
                     case .playing(let card):
-                        challengeView(for: card, isLandscape: isLandscape)
+                        challengeView(for: card, isLandscape: isPhoneLandscape)
                     case .showingTip(let roundIndex, let tips):
                         RoundTipView(
-                            roundTitle: "Round \(roundIndex + 1)",
+                            roundTitle: tipTitle(for: roundIndex),
                             tips: tips,
                             onContinue: viewModel.dismissTipAndContinue
+                        )
+                    case .showingSubRoundReview(_, _, let items):
+                        ConversionReviewView(
+                            items: items,
+                            onContinue: viewModel.dismissSubRoundReviewAndContinue
+                        )
+                    case .finalExamResult(let passed, let correct, let total):
+                        FinalExamResultView(
+                            passed: passed,
+                            correct: correct,
+                            total: total,
+                            onContinue: viewModel.acknowledgeExamPass,
+                            onRetry: viewModel.retryFinalExam,
+                            onReviewLearning: viewModel.reviewEarlierRoundsAfterExam
                         )
                     case .roundComplete:
                         roundCompletePlaceholder
@@ -131,25 +150,71 @@ struct TemperatureGameView: View {
             feedbackBanner
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.feedback)
-        .onChange(of: viewModel.feedback) { _, feedback in
-            switch feedback {
-            case .exact, .closeEnough:
-                metricHaptic(.success)
-            case .incorrect:
-                metricHaptic(.warning)
-            case .none:
-                break
+    }
+
+    @ViewBuilder
+    private func progressChrome(isPhoneLandscape: Bool) -> some View {
+        let pathStyle: LearningPathStyle = isPhoneLandscape ? .compact : .standard
+        let isExam = progressStore.isActiveFinalExamSession
+        let header = RoundProgressHeader(
+            roundLabel: roundLabel,
+            learned: progressStore.learnedCountInCurrentSubRound(),
+            total: progressStore.totalCountInCurrentSubRound(),
+            metricLabel: isExam ? "Correct" : "Learned",
+            remainingCount: isExam ? progressStore.examRemainingCount() : nil,
+            compact: isPhoneLandscape
+        )
+
+        if isPhoneLandscape {
+            HStack(alignment: .center, spacing: 10) {
+                LearningPathView(
+                    progressStore: progressStore,
+                    style: pathStyle,
+                    onRedoCompletedSubRound: { roundIndex, subRoundIndex in
+                        viewModel.redoSubRound(roundIndex: roundIndex, subRoundIndex: subRoundIndex)
+                    },
+                    onRedoFinalExam: {
+                        viewModel.redoFinalExam()
+                    }
+                )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                header
+                    .frame(maxWidth: 220)
             }
+            .padding(.horizontal, 8)
+            .padding(.top, 2)
+        } else {
+            LearningPathView(
+                progressStore: progressStore,
+                style: pathStyle,
+                onRedoCompletedSubRound: { roundIndex, subRoundIndex in
+                    viewModel.redoSubRound(roundIndex: roundIndex, subRoundIndex: subRoundIndex)
+                },
+                onRedoFinalExam: {
+                    viewModel.redoFinalExam()
+                }
+            )
+                .padding(.top, 8)
+
+            header
         }
     }
 
     private var isFullScreenPhase: Bool {
         switch viewModel.phase {
-        case .showingTip, .moduleComplete:
+        case .showingTip, .showingSubRoundReview, .finalExamResult, .moduleComplete:
             return true
         default:
             return false
         }
+    }
+
+    private func tipTitle(for roundIndex: Int) -> String {
+        if progressStore.isFinalExamRound(roundIndex) {
+            return "Final Exam"
+        }
+        return "Round \(roundIndex + 1): \(TemperatureCurriculum.roundTitle(for: roundIndex))"
     }
 
     private var progressStore: TemperatureProgressStore {
@@ -194,6 +259,7 @@ struct TemperatureGameView: View {
                 }
                 .frame(minHeight: layout == .sideBySide ? geometry.size.height : nil)
             }
+            .scrollDismissesKeyboard(.never)
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .transition(.opacity.combined(with: .scale(scale: 0.98)))
@@ -265,16 +331,12 @@ struct TemperatureGameView: View {
             TemperaturePromptView(
                 value: card.celsius,
                 unit: "°C",
-                caption: card.label,
-                hint: "Drag the marker on the Fahrenheit scale",
                 compact: compact
             )
         case .fahrenheitToCelsius:
             TemperaturePromptView(
                 value: card.promptValue,
                 unit: "°F",
-                caption: card.label,
-                hint: "Drag the marker on the Celsius scale",
                 compact: compact
             )
         }
@@ -286,7 +348,7 @@ struct TemperatureGameView: View {
         case .celsiusToFahrenheit:
             ThermometerSliderView(
                 celsius: card.celsius,
-                label: card.label,
+                label: nil,
                 selectedFahrenheit: $sliderValueFahrenheit,
                 isEnabled: !viewModel.isSubmitting,
                 layout: layout,
@@ -296,7 +358,7 @@ struct TemperatureGameView: View {
         case .fahrenheitToCelsius:
             CelsiusSliderView(
                 fahrenheit: card.promptValue,
-                label: card.label,
+                label: nil,
                 selectedCelsius: $sliderValueCelsius,
                 isEnabled: !viewModel.isSubmitting,
                 layout: layout,
@@ -324,12 +386,12 @@ struct TemperatureGameView: View {
     private func prepareChallenge(for card: TemperatureCard) {
         switch card.direction {
         case .celsiusToFahrenheit:
-            sliderValueFahrenheit = TemperatureGameConstants.defaultSliderFahrenheit
+            sliderValueFahrenheit = TemperatureConversion.neutralSliderDefault(for: card)
         case .fahrenheitToCelsius:
-            sliderValueCelsius = TemperatureGameConstants.defaultSliderCelsius
+            sliderValueCelsius = TemperatureConversion.neutralSliderDefault(for: card)
         }
         if card.challengeType == .multipleChoice {
-            multipleChoiceOptions = TemperatureGameViewModel.multipleChoiceOptions(for: card)
+            multipleChoiceOptions = viewModel.multipleChoiceOptions(for: card)
         }
     }
 
@@ -343,14 +405,14 @@ struct TemperatureGameView: View {
                 .transition(.scale(scale: 0.92).combined(with: .opacity))
         case .closeEnough(let answer, let unit):
             FeedbackToast(
-                text: "Close enough! It's \(AnswerFormatting.degreesPhrase(value: answer, unit: unit))",
+                text: "Close enough! It's \(TemperatureFormatting.degreesPhrase(value: answer, unit: unit))",
                 icon: "checkmark.circle.fill",
                 isSuccess: true
             )
             .transition(.scale(scale: 0.92).combined(with: .opacity))
         case .incorrect(let correctAnswer, let unit):
             FeedbackToast(
-                text: "Not quite — it's \(AnswerFormatting.degreesPhrase(value: correctAnswer, unit: unit))",
+                text: "Not quite — it's \(TemperatureFormatting.degreesPhrase(value: correctAnswer, unit: unit))",
                 icon: "xmark.circle.fill",
                 isSuccess: false
             )
@@ -404,7 +466,7 @@ struct TemperatureGameView: View {
                 .font(.largeTitle.weight(.bold))
                 .foregroundStyle(palette.textPrimary)
 
-            Text("You can now approximate everyday temperatures in both directions — within 3°, from memory.")
+            Text("You've passed the final exam and can approximate everyday temperatures in both directions — within your accuracy setting — from what you've learned.")
                 .font(.body)
                 .foregroundStyle(palette.textSecondary)
                 .multilineTextAlignment(.center)
@@ -433,6 +495,10 @@ struct TemperatureGameView: View {
 
 #Preview {
     NavigationStack {
-        TemperatureGameView()
+        TemperatureGameView(
+            progressStore: TemperatureProgressStore(),
+            settings: AppSettingsStore()
+        )
     }
+    .environment(AppSettingsStore())
 }

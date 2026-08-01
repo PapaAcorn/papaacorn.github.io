@@ -7,20 +7,29 @@ import SwiftUI
 
 struct UnitCalculatorView: View {
     @Environment(\.metricPalette) private var palette
-    @Environment(\.dismiss) private var dismiss
 
-    @State private var viewModel: UnitCalculatorViewModel
+    @Bindable var viewModel: UnitCalculatorViewModel
     @State private var showSendWarning = false
 
     let onSendToConverter: (String, ConversionCategory, ConversionUnit) -> Void
+
+    init(
+        viewModel: UnitCalculatorViewModel,
+        onSendToConverter: @escaping (String, ConversionCategory, ConversionUnit) -> Void
+    ) {
+        self.viewModel = viewModel
+        self.onSendToConverter = onSendToConverter
+    }
 
     init(
         category: ConversionCategory,
         unit: ConversionUnit,
         onSendToConverter: @escaping (String, ConversionCategory, ConversionUnit) -> Void
     ) {
-        _viewModel = State(initialValue: UnitCalculatorViewModel(category: category, unit: unit))
-        self.onSendToConverter = onSendToConverter
+        self.init(
+            viewModel: UnitCalculatorViewModel(category: category, unit: unit),
+            onSendToConverter: onSendToConverter
+        )
     }
 
     var body: some View {
@@ -35,25 +44,6 @@ struct UnitCalculatorView: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 24)
         .metricScreenBackground()
-        .navigationTitle("Calculator")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    dismiss()
-                } label: {
-                    HStack(spacing: 5) {
-                        ConverterModeIcon()
-                        Text("Converter")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .foregroundStyle(palette.textSecondary)
-                }
-                .accessibilityLabel("Return to converter")
-            }
-        }
         .sheet(isPresented: $showSendWarning) {
             SendToConverterWarningSheet(isPresented: $showSendWarning) {
                 completeSendToConverter()
@@ -62,25 +52,18 @@ struct UnitCalculatorView: View {
     }
 
     private var unitContextPickers: some View {
-        VStack(spacing: 10) {
-            Picker("Category", selection: $viewModel.category) {
-                ForEach(ConversionCategory.allCases) { category in
-                    Text(category.displayName).tag(category)
-                }
-            }
-            .pickerStyle(.menu)
-            .tint(palette.textPrimary)
+        HStack(spacing: 10) {
+            ConversionCategoryMenu(selection: $viewModel.category)
+                .frame(maxWidth: .infinity)
 
-            Picker("Unit", selection: $viewModel.unit) {
-                ForEach(viewModel.availableUnits) { unit in
-                    Text(unit.displayName).tag(unit)
-                }
-            }
-            .pickerStyle(.menu)
-            .tint(palette.textPrimary)
+            ConversionUnitMenu(
+                title: "Unit",
+                units: viewModel.availableUnits,
+                selection: $viewModel.unit,
+                category: viewModel.category
+            )
+            .frame(maxWidth: .infinity)
         }
-        .padding(14)
-        .background(pickerBackground)
     }
 
     private var displayPanel: some View {
@@ -130,13 +113,11 @@ struct UnitCalculatorView: View {
                 (.operation(.add), { viewModel.applyOperation(.add) }),
             ])
 
-            if viewModel.supportsFractionEntry {
-                keypadRow([
-                    (.function(viewModel.fractionToggleLabel), { viewModel.toggleFractionDecimal() }),
-                    (.function("␣"), { viewModel.appendSpace() }),
-                    (.function("/"), { viewModel.appendSlash() }),
-                ])
-            }
+            keypadRow([
+                (.function(viewModel.fractionToggleLabel), { viewModel.toggleFractionDecimal() }),
+                (.function("␣"), { viewModel.appendSpace() }),
+                (.function("/"), { viewModel.appendSlash() }),
+            ])
 
             keypadRow([
                 (.function("⌫"), { viewModel.backspace() }),
@@ -163,7 +144,6 @@ struct UnitCalculatorView: View {
 
     private func completeSendToConverter() {
         onSendToConverter(viewModel.converterValue, viewModel.category, viewModel.unit)
-        dismiss()
     }
 
     private var pickerBackground: some View {
@@ -234,17 +214,6 @@ struct UnitCalculatorView: View {
         case .digit:
             return AnyShapeStyle(palette.chipFill)
         }
-    }
-}
-
-private struct ConverterModeIcon: View {
-    var body: some View {
-        VStack(spacing: 1) {
-            Image(systemName: "arrow.left")
-            Image(systemName: "arrow.right")
-        }
-        .font(.system(size: 10, weight: .bold))
-        .frame(width: 22, height: 22)
     }
 }
 

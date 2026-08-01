@@ -13,7 +13,7 @@ enum FractionParseError: Error, Equatable {
 }
 
 struct FractionParser {
-    private static let maxDenominator = 64
+    private static let defaultMaxDenominator = 64
 
     /// Parses decimal, simple fraction, or mixed-number strings such as `3 3/32`.
     static func parse(_ input: String) -> Result<Double, FractionParseError> {
@@ -53,17 +53,9 @@ struct FractionParser {
         }
     }
 
-    static func parseDecimalInches(_ input: String) -> Result<Double, FractionParseError> {
-        parse(input)
-    }
-
-    /// Formats a decimal inch value as a woodworking-friendly mixed fraction.
-    static func formatInchesFraction(_ decimalInches: Double, maxDenominator: Int = 64) -> String {
-        formatFraction(decimalInches, maxDenominator: maxDenominator)
-    }
-
-    static func formatFeetFraction(_ decimalFeet: Double, maxDenominator: Int = 64) -> String {
-        formatFraction(decimalFeet, maxDenominator: maxDenominator)
+    /// Formats a decimal as an ordinary mixed fraction (denominators 1 through maxDenominator).
+    static func formatFraction(_ value: Double, maxDenominator: Int = defaultMaxDenominator) -> String {
+        formatGeneralFractionValue(value, maxDenominator: maxDenominator)
     }
 
     // MARK: - Private
@@ -95,21 +87,34 @@ struct FractionParser {
               denominator != 0
         else { return .failure(.invalidFormat) }
 
-        guard denominator <= Double(maxDenominator) else { return .failure(.denominatorTooLarge) }
+        guard denominator <= Double(defaultMaxDenominator) else {
+            return .failure(.denominatorTooLarge)
+        }
         return .success(numerator / denominator)
     }
 
-    private static func formatFraction(_ value: Double, maxDenominator: Int) -> String {
+    private static func formatGeneralFractionValue(_ value: Double, maxDenominator: Int) -> String {
+        signedMixedFraction(
+            value,
+            numeratorDenominator: bestGeneralRationalApproximation(fractionalPart(of: value), maxDenominator: maxDenominator)
+        )
+    }
+
+    private static func signedMixedFraction(_ value: Double, numeratorDenominator: (Int, Int)) -> String {
         let sign = value < 0 ? "-" : ""
-        let absValue = abs(value)
-        let whole = Int(absValue)
-        let fractional = absValue - Double(whole)
+        var whole = Int(abs(value))
+        let fractional = fractionalPart(of: value)
 
         guard fractional > 0.000_001 else {
             return whole == 0 ? "0" : "\(sign)\(whole)"
         }
 
-        let (numerator, denominator) = bestRationalApproximation(fractional, maxDenominator: maxDenominator)
+        var (numerator, denominator) = numeratorDenominator
+        if numerator == denominator {
+            whole += 1
+            numerator = 0
+        }
+
         if numerator == 0 {
             return whole == 0 ? "0" : "\(sign)\(whole)"
         }
@@ -120,12 +125,16 @@ struct FractionParser {
         return "\(sign)\(whole) \(numerator)/\(denominator)"
     }
 
-    private static func bestRationalApproximation(_ value: Double, maxDenominator: Int) -> (Int, Int) {
+    private static func fractionalPart(of value: Double) -> Double {
+        abs(value) - Double(Int(abs(value)))
+    }
+
+    private static func bestGeneralRationalApproximation(_ value: Double, maxDenominator: Int) -> (Int, Int) {
         var bestNumerator = 0
         var bestDenominator = 1
         var bestError = Double.greatestFiniteMagnitude
 
-        for denominator in 1...maxDenominator {
+        for denominator in 1...max(1, maxDenominator) {
             let numerator = Int((value * Double(denominator)).rounded())
             let error = abs(value - Double(numerator) / Double(denominator))
             if error < bestError {

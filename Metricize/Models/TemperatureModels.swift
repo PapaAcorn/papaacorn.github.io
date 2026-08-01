@@ -15,6 +15,11 @@ enum ConversionDirection: String, Codable, CaseIterable {
     case fahrenheitToCelsius
 }
 
+enum TemperatureRoundKind: Equatable {
+    case learning
+    case finalExam
+}
+
 struct TemperatureCard: Identifiable, Codable, Equatable {
     let id: String
     let celsius: Int
@@ -56,11 +61,19 @@ struct TemperatureCard: Identifiable, Codable, Equatable {
     }
 
     var answerRange: ClosedRange<Int> {
+        if roundIndex == TemperatureGameConstants.finalExamRoundIndex {
+            switch direction {
+            case .celsiusToFahrenheit:
+                return TemperatureGameConstants.examFahrenheitRange
+            case .fahrenheitToCelsius:
+                return TemperatureGameConstants.examCelsiusRange
+            }
+        }
         switch direction {
         case .celsiusToFahrenheit:
-            TemperatureGameConstants.fahrenheitMin...TemperatureGameConstants.fahrenheitMax
+            return TemperatureGameConstants.fahrenheitMin...TemperatureGameConstants.fahrenheitMax
         case .fahrenheitToCelsius:
-            TemperatureGameConstants.celsiusMin...TemperatureGameConstants.celsiusMax
+            return TemperatureGameConstants.celsiusMin...TemperatureGameConstants.celsiusMax
         }
     }
 
@@ -69,9 +82,14 @@ struct TemperatureCard: Identifiable, Codable, Equatable {
         roundIndex: Int,
         challengeType: ChallengeType,
         direction: ConversionDirection,
-        label: String? = nil
+        label: String? = nil,
+        examQuestionID: String? = nil
     ) {
-        self.id = "c\(celsius)-r\(roundIndex)-\(direction.rawValue)"
+        if let examQuestionID {
+            self.id = examQuestionID
+        } else {
+            self.id = "c\(celsius)-r\(roundIndex)-\(direction.rawValue)"
+        }
         self.celsius = celsius
         self.roundIndex = roundIndex
         self.challengeType = challengeType
@@ -82,31 +100,75 @@ struct TemperatureCard: Identifiable, Codable, Equatable {
 
 struct CardProgress: Codable, Equatable {
     var consecutiveCorrect: Int = 0
+    var mixedConsecutiveCorrect: Int = 0
     var totalCorrect: Int = 0
     var totalIncorrect: Int = 0
 
     var isLearned: Bool {
         consecutiveCorrect >= LearningPreferences.requiredConsecutiveCorrect
     }
+
+    var isMixedLearned: Bool {
+        mixedConsecutiveCorrect >= LearningPreferences.requiredConsecutiveCorrect
+    }
 }
 
 struct TemperatureRound: Identifiable {
     let index: Int
     let title: String
+    let kind: TemperatureRoundKind
     let cards: [TemperatureCard]
 
     var id: Int { index }
 
-    /// Five anchor conversions per round (each appears in both directions).
+    var isFinalExam: Bool { kind == .finalExam }
+
+    var subRoundCount: Int {
+        isFinalExam ? 1 : TemperatureGameConstants.subRoundsPerRound
+    }
+
+    /// Five anchor conversions per learning round (each appears in both directions).
     var anchorCount: Int {
         cards.filter { $0.direction == .celsiusToFahrenheit }.count
     }
 }
 
+struct FinalExamSession: Codable, Equatable {
+    var questions: [TemperatureCard]
+    var currentQuestionIndex: Int = 0
+    var correctCount: Int = 0
+
+    var totalQuestions: Int { questions.count }
+
+    var isComplete: Bool {
+        currentQuestionIndex >= questions.count
+    }
+
+    var scoreFraction: Double {
+        guard totalQuestions > 0 else { return 0 }
+        return Double(correctCount) / Double(totalQuestions)
+    }
+}
+
 enum TemperatureGameConstants {
-    static let toleranceDegrees = 3
     static let subRoundsPerRound = 3
-    static let fahrenheitMin = 0
+    static let mixedSubRoundIndex = 2
+    static let finalExamRoundIndex = 3
+    static let learningRoundCount = 3
+    static let examFahrenheitMin = -10
+    static let examFahrenheitMax = 105
+    static let examQuestionCount = 20
+    static let examPassFraction = 0.8
+    static let examPassCorrectCount = Int(ceil(Double(examQuestionCount) * examPassFraction))
+    static var examCelsiusRange: ClosedRange<Int> {
+        TemperatureConversion.celsius(fromFahrenheit: examFahrenheitMin)...TemperatureConversion.celsius(fromFahrenheit: examFahrenheitMax)
+    }
+
+    static var examFahrenheitRange: ClosedRange<Int> {
+        examFahrenheitMin...examFahrenheitMax
+    }
+
+    static let fahrenheitMin = -10
     static let fahrenheitMax = 110
     static let celsiusMin = -23
     static let celsiusMax = 43
@@ -131,7 +193,7 @@ enum TemperatureConversion {
         guess == target
     }
 
-    static func isWithinTolerance(guess: Int, target: Int, tolerance: Int = TemperatureGameConstants.toleranceDegrees) -> Bool {
+    static func isWithinTolerance(guess: Int, target: Int, tolerance: Int) -> Bool {
         abs(guess - target) <= tolerance
     }
 
@@ -141,9 +203,26 @@ enum TemperatureConversion {
         case incorrect
     }
 
-    static func evaluate(guess: Int, target: Int) -> AnswerResult {
+    static func evaluate(guess: Int, target: Int, tolerance: Int) -> AnswerResult {
         if isExact(guess: guess, target: target) { return .exact }
-        if isWithinTolerance(guess: guess, target: target) { return .closeEnough }
+        if isWithinTolerance(guess: guess, target: target, tolerance: tolerance) { return .closeEnough }
         return .incorrect
+    }
+
+    static func neutralSliderDefault(for card: TemperatureCard) -> Double {
+        let range = card.answerRange
+        let correct = card.correctAnswer
+        let candidates: [Int]
+        switch card.direction {
+        case .celsiusToFahrenheit:
+            candidates = [50, 68, 32, 86, 14, 0, -4].filter { range.contains($0) && $0 != correct }
+        case .fahrenheitToCelsius:
+            candidates = [10, 0, 20, -5, 15, -10].filter { range.contains($0) && $0 != correct }
+        }
+        if let pick = candidates.first {
+            return Double(pick)
+        }
+        let midpoint = (range.lowerBound + range.upperBound) / 2
+        return Double(midpoint == correct ? midpoint + 5 : midpoint)
     }
 }

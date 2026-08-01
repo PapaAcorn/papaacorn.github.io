@@ -42,8 +42,8 @@ final class FractionParserTests: XCTestCase {
         XCTAssertEqual(FractionParser.parse("abc"), .failure(.invalidFormat))
     }
 
-    func testFormatInchesFraction() {
-        XCTAssertEqual(FractionParser.formatInchesFraction(3.09375), "3 3/32")
-        XCTAssertEqual(FractionParser.formatInchesFraction(0.875), "7/8")
+    func testFormatFraction() {
+        XCTAssertEqual(FractionParser.formatFraction(3.09375), "3 3/32")
+        XCTAssertEqual(FractionParser.formatFraction(0.875), "7/8")
     }
 }

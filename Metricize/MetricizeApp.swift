@@ -6,24 +6,17 @@
 //
 
 import SwiftUI
-#if canImport(AppIntents)
-import AppIntents
-#endif
-#if canImport(UIKit)
 import UIKit
-#elseif canImport(AppKit)
-import AppKit
-#endif
 
 @main
 struct MetricizeApp: App {
+    @UIApplicationDelegateAdaptor(MetricizeAppDelegate.self) private var appDelegate
+
     @State private var settings = AppSettingsStore()
 
     init() {
         AppFont.register()
-        #if canImport(AppIntents)
-        MetricizeShortcutRegistration.update()
-        #endif
+        MetricizeShortcutRegistration.ensureLinked()
     }
 
     var body: some Scene {
@@ -46,10 +39,5 @@ private struct RootView: View {
             .environment(settings)
             .environment(\.metricPalette, MetricPalette.forScheme(activeColorScheme))
             .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
-            .onOpenURL { url in
-                if url.host == "calculator" || url.path == "/calculator" {
-                    AppNavigationStore.shared.openConversionCalculator()
-                }
-            }
     }
 }

@@ -6,25 +6,18 @@
 import SwiftUI
 
 struct ConversionCategoryMenu: View {
-    @Environment(\.metricPalette) private var palette
     @Binding var selection: ConversionCategory
 
     var body: some View {
         Menu {
-            ForEach(Array(ConversionCategory.pickerSections.enumerated()), id: \.offset) { index, section in
-                if index > 0 {
-                    Divider()
-                }
-                ForEach(section) { category in
-                    Button {
-                        selection = category
-                    } label: {
-                        if selection == category {
-                            Label(category.displayName, systemImage: "checkmark")
-                        } else {
-                            Text(category.displayName)
-                        }
-                    }
+            ForEach(ConversionCategory.pickerOrder) { category in
+                Button {
+                    selection = category
+                } label: {
+                    ConversionMenuRow(
+                        title: category.displayName,
+                        isSelected: selection == category
+                    )
                 }
             }
         } label: {
@@ -36,8 +29,6 @@ struct ConversionCategoryMenu: View {
 }
 
 struct ConversionUnitMenu: View {
-    @Environment(\.metricPalette) private var palette
-
     let title: String
     let units: [ConversionUnit]
     @Binding var selection: ConversionUnit
@@ -52,11 +43,10 @@ struct ConversionUnitMenu: View {
                 Button {
                     selection = unit
                 } label: {
-                    if selection == unit {
-                        Label(unit.displayName, systemImage: "checkmark")
-                    } else {
-                        Text(unit.displayName)
-                    }
+                    ConversionMenuRow(
+                        title: unit.displayName,
+                        isSelected: selection == unit
+                    )
                 }
                 .disabled(showsCompatibility && !compatible)
             }
@@ -71,6 +61,21 @@ struct ConversionUnitMenu: View {
         guard showsCompatibility, let sourceUnit else { return true }
         if unit == sourceUnit { return false }
         return ConversionUnitCompatibility.canConvert(from: sourceUnit, to: unit, category: category)
+    }
+}
+
+private struct ConversionMenuRow: View {
+    let title: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer(minLength: 20)
+            if isSelected {
+                Image(systemName: "checkmark")
+            }
+        }
     }
 }
 
@@ -108,32 +113,5 @@ private struct ConversionPickerLabel: View {
                 }
         }
         .contentShape(Rectangle())
-    }
-}
-
-struct CalculatorLaunchButton: View {
-    @Environment(\.metricPalette) private var palette
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text("Calculator")
-                .font(.subheadline.weight(.semibold))
-                .multilineTextAlignment(.center)
-                .frame(minWidth: 96)
-                .foregroundStyle(palette.textPrimary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(palette.chipFill)
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(palette.chipStroke, lineWidth: 1)
-                    }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open calculator")
     }
 }

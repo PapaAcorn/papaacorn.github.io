@@ -8,7 +8,7 @@ import XCTest
 
 final class UnitCalculatorViewModelTests: XCTestCase {
     func testFractionEntryParsesMixedNumber() {
-        let viewModel = UnitCalculatorViewModel(category: .construction, unit: .inchesFraction)
+        let viewModel = UnitCalculatorViewModel(category: .distance, unit: .inches)
         viewModel.clear()
         viewModel.appendDigit("1")
         viewModel.appendDigit("0")
@@ -23,7 +23,7 @@ final class UnitCalculatorViewModelTests: XCTestCase {
     }
 
     func testFractionAddition() {
-        let viewModel = UnitCalculatorViewModel(category: .construction, unit: .inchesFraction)
+        let viewModel = UnitCalculatorViewModel(category: .distance, unit: .inches)
         viewModel.clear()
         viewModel.appendDigit("1")
         viewModel.appendSlash()
@@ -35,10 +35,27 @@ final class UnitCalculatorViewModelTests: XCTestCase {
         viewModel.equals()
 
         XCTAssertEqual(viewModel.numericValue ?? 0, 0.75, accuracy: 0.0001)
+        XCTAssertTrue(viewModel.display.contains("/"))
+    }
+
+    func testFractionAdditionShowsFractionResult() {
+        let viewModel = UnitCalculatorViewModel(category: .distance, unit: .inches)
+        viewModel.clear()
+        viewModel.appendDigit("1")
+        viewModel.appendSlash()
+        viewModel.appendDigit("2")
+        viewModel.applyOperation(.add)
+        viewModel.appendDigit("1")
+        viewModel.appendSlash()
+        viewModel.appendDigit("4")
+        viewModel.equals()
+
+        XCTAssertEqual(viewModel.numericValue ?? 0, 0.75, accuracy: 0.0001)
+        XCTAssertTrue(viewModel.display.contains("/"))
     }
 
     func testFractionToggle() {
-        let viewModel = UnitCalculatorViewModel(category: .construction, unit: .inchesFraction)
+        let viewModel = UnitCalculatorViewModel(category: .distance, unit: .inches)
         viewModel.clear()
         viewModel.appendDigit("1")
         viewModel.appendDecimal()

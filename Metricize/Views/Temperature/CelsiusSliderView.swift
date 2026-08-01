@@ -12,8 +12,11 @@ struct CelsiusSliderView: View {
     let isEnabled: Bool
     var layout: ChallengeLayout = .stacked
     var compact: Bool = false
+    var showsAccuracyToleranceNote: Bool = true
+    var showsStepButtons: Bool = false
 
     @Environment(\.metricPalette) private var palette
+    @Environment(AppSettingsStore.self) private var settings
 
     private let range = Double(TemperatureGameConstants.celsiusMin)...Double(TemperatureGameConstants.celsiusMax)
 
@@ -40,14 +43,22 @@ struct CelsiusSliderView: View {
         TemperaturePromptView(
             value: fahrenheit,
             unit: "°F",
-            caption: label,
-            hint: "Drag the marker on the Celsius scale"
+            compact: compact
         )
     }
 
     private var sliderControls: some View {
-        HStack(alignment: .center, spacing: 28) {
+        HStack(alignment: .center, spacing: compact ? 16 : 28) {
+            if showsStepButtons {
+                temperatureStepButton(delta: -1)
+            }
+
             celsiusTrack
+
+            if showsStepButtons {
+                temperatureStepButton(delta: 1)
+            }
+
             celsiusReadout
         }
         .frame(maxHeight: sliderMaxHeight)
@@ -143,8 +154,9 @@ struct CelsiusSliderView: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             guard isEnabled else { return }
-                            let clampedY = min(max(value.location.y, 12), height - 36)
-                            selectedCelsius = celsius(for: clampedY, in: height)
+                            let bounds = TemperatureSliderGeometry.dragBounds(in: height)
+                            let clampedY = min(max(value.location.y, bounds.lowerBound), bounds.upperBound)
+                            selectedCelsius = TemperatureSliderGeometry.value(at: clampedY, in: range, height: height)
                         }
                 )
                 .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.78), value: selectedCelsius)
@@ -164,6 +176,7 @@ struct CelsiusSliderView: View {
                 Text("\(Int(selectedCelsius.rounded()))")
                     .font(.system(size: 52, weight: .thin, design: .rounded))
                     .foregroundStyle(guessHue)
+                    .monospacedDigit()
                     .contentTransition(.numericText())
 
                 Text("°C")
@@ -171,10 +184,13 @@ struct CelsiusSliderView: View {
                     .foregroundStyle(palette.textSecondary)
             }
 
-            Text("±\(TemperatureGameConstants.toleranceDegrees)° counts")
+            Text("±\(settings.accuracyToleranceDegrees)° counts")
                 .font(.caption2)
                 .foregroundStyle(palette.textTertiary)
                 .multilineTextAlignment(.center)
+                .opacity(showsAccuracyToleranceNote ? 1 : 0)
+                .frame(height: showsAccuracyToleranceNote ? nil : 0)
+                .clipped()
         }
         .frame(width: 110)
         .padding(.vertical, 16)
@@ -200,13 +216,25 @@ struct CelsiusSliderView: View {
     }
 
     private func yPosition(for celsius: Double, in height: CGFloat) -> CGFloat {
-        let normalized = (celsius - range.lowerBound) / (range.upperBound - range.lowerBound)
-        return height - CGFloat(normalized) * (height - 48) - 24
+        TemperatureSliderGeometry.yPosition(for: celsius, in: range, height: height)
     }
 
-    private func celsius(for y: CGFloat, in height: CGFloat) -> Double {
-        let normalized = 1 - (y - 24) / (height - 48)
-        let value = range.lowerBound + Double(normalized) * (range.upperBound - range.lowerBound)
-        return min(max(value, range.lowerBound), range.upperBound)
+    private func temperatureStepButton(delta: Int) -> some View {
+        Button {
+            let next = Int(selectedCelsius.rounded()) + delta
+            guard range.contains(Double(next)) else { return }
+            selectedCelsius = Double(next)
+        } label: {
+            Text(delta > 0 ? "+1" : "−1")
+                .font(.headline.weight(.bold).monospacedDigit())
+                .frame(width: compact ? 40 : 48, height: compact ? 40 : 48)
+                .foregroundStyle(guessHue)
+                .background {
+                    Circle()
+                        .fill(guessHue.opacity(0.14))
+                }
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
     }
 }

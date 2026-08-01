@@ -16,15 +16,6 @@ struct MultipleChoiceChallengeView: View {
     @State private var appeared = false
     @Environment(\.metricPalette) private var palette
 
-    private var hint: String {
-        switch card.direction {
-        case .celsiusToFahrenheit:
-            "is about how many \(card.answerUnit)?"
-        case .fahrenheitToCelsius:
-            "is about how many \(card.answerUnit)?"
-        }
-    }
-
     var body: some View {
         Group {
             switch layout {
@@ -60,8 +51,6 @@ struct MultipleChoiceChallengeView: View {
         TemperaturePromptView(
             value: card.promptValue,
             unit: card.promptUnit,
-            caption: card.label,
-            hint: hint,
             compact: compact
         )
     }

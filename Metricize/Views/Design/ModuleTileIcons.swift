@@ -8,24 +8,28 @@ import SwiftUI
 enum ModuleTileIconKind {
     case insideAndOut
     case kitchen
+    case shop
     case gym
     case onTheRoad
     case hereToThere
     case calculator
 
     init(tile: ModuleTileItem) {
-        switch tile {
+        switch tile.productID {
         case .insideAndOut:
             self = .insideAndOut
         case .conversionCalculator:
             self = .calculator
-        case .comingSoon(let module):
-            switch module {
-            case .inTheKitchen: self = .kitchen
-            case .atTheGym: self = .gym
-            case .onTheRoad: self = .onTheRoad
-            case .hereToThere: self = .hereToThere
-            }
+        case .inTheKitchen:
+            self = .kitchen
+        case .atTheShop:
+            self = .shop
+        case .atTheGym:
+            self = .gym
+        case .onTheRoad:
+            self = .onTheRoad
+        case .hereToThere:
+            self = .hereToThere
         }
     }
 
@@ -33,6 +37,8 @@ enum ModuleTileIconKind {
         switch self {
         case .kitchen:
             ModuleTileIconPlacement(scale: 0.74, yOffset: 0.14)
+        case .shop:
+            ModuleTileIconPlacement(scale: 0.94, yOffset: 0.06)
         case .hereToThere:
             ModuleTileIconPlacement(scale: 0.8, yOffset: 0.1)
         case .calculator:
@@ -57,8 +63,8 @@ struct ModuleTileIconView: View {
     var body: some View {
         icon
             .scaleEffect(kind.tilePlacement.scale)
+            .frame(width: size, height: size, alignment: .center)
             .offset(y: size * kind.tilePlacement.yOffset)
-            .frame(width: size, height: size)
     }
 
     @ViewBuilder
@@ -68,6 +74,8 @@ struct ModuleTileIconView: View {
             InsideAndOutIcon(size: size)
         case .kitchen:
             KitchenCakeIcon(size: size)
+        case .shop:
+            ShopIcon(size: size)
         case .gym:
             DumbbellIcon(size: size)
         case .onTheRoad:
@@ -98,6 +106,62 @@ private struct InsideAndOutIcon: View {
                 .frame(width: size * 0.5, height: size)
         }
         .frame(width: size, height: size)
+    }
+}
+
+// MARK: - Shop (storefront)
+
+private struct ShopIcon: View {
+    let size: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: size * 0.05, style: .continuous)
+                .fill(MetricTheme.coolFrost)
+                .frame(width: size * 0.64, height: size * 0.44)
+                .overlay(alignment: .top) {
+                    HStack(spacing: size * 0.08) {
+                        RoundedRectangle(cornerRadius: size * 0.015, style: .continuous)
+                            .fill(MetricTheme.coolDeep.opacity(0.35))
+                            .frame(width: size * 0.14, height: size * 0.12)
+                        RoundedRectangle(cornerRadius: size * 0.015, style: .continuous)
+                            .fill(MetricTheme.coolDeep.opacity(0.35))
+                            .frame(width: size * 0.14, height: size * 0.12)
+                    }
+                    .padding(.top, size * 0.06)
+                }
+                .overlay(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: size * 0.025, style: .continuous)
+                        .fill(MetricTheme.warmEmber)
+                        .frame(width: size * 0.18, height: size * 0.2)
+                        .padding(.bottom, size * 0.04)
+                }
+
+            ShopAwning(size: size)
+                .offset(y: -size * 0.36)
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+private struct ShopAwning: View {
+    let size: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: size * 0.035, style: .continuous)
+                .fill(MetricTheme.warmEmber)
+                .frame(width: size * 0.76, height: size * 0.16)
+
+            HStack(spacing: size * 0.04) {
+                ForEach(0..<4, id: \.self) { _ in
+                    Capsule()
+                        .fill(Color.white.opacity(0.85))
+                        .frame(width: size * 0.035, height: size * 0.07)
+                }
+            }
+            .offset(y: size * 0.05)
+        }
     }
 }
 

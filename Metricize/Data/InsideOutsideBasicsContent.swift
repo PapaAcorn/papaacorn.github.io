@@ -60,7 +60,11 @@ enum InsideOutsideBasicsContent {
         ),
         OnboardingPage(
             index: 9,
-            body: "You only need to be within 3 degrees of the exact answer to get the question right."
+            body: "You only need to be within \(LearningPreferences.defaultAccuracyToleranceDegrees) degrees of the exact answer to count as correct (adjustable in Settings)."
+        ),
+        OnboardingPage(
+            index: 10,
+            body: "Each temperature must be answered correctly \(LearningPreferences.defaultRequiredConsecutiveCorrect) times in a row before it is considered learned (adjustable in Settings)."
         ),
     ]
 }

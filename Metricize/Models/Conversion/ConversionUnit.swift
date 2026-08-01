@@ -21,10 +21,6 @@ enum ConversionUnit: String, CaseIterable, Identifiable, Codable, Hashable {
     case miles
     case kilometers
 
-    // Construction
-    case inchesFraction
-    case feetFraction
-
     // Volume
     case teaspoons
     case tablespoons
@@ -57,11 +53,7 @@ enum ConversionUnit: String, CaseIterable, Identifiable, Codable, Hashable {
             .temperature
         case .inches, .millimeters, .centimeters, .feet, .meters, .yards, .miles, .kilometers:
             .distance
-        case .inchesFraction, .feetFraction:
-            .construction
-        case .teaspoons, .tablespoons:
-            .kitchen
-        case .fluidOunces, .milliliters, .cups, .liters, .pints, .quarts, .gallons:
+        case .teaspoons, .tablespoons, .fluidOunces, .milliliters, .cups, .liters, .pints, .quarts, .gallons:
             .volume
         case .ounces, .grams, .pounds, .kilograms, .stones:
             .weight
@@ -71,17 +63,6 @@ enum ConversionUnit: String, CaseIterable, Identifiable, Codable, Hashable {
     }
 
     var category: ConversionCategory { primaryCategory }
-
-    var kitchenMeasureKind: KitchenMeasureKind? {
-        switch self {
-        case .teaspoons, .tablespoons, .fluidOunces, .milliliters, .cups, .liters, .pints, .quarts:
-            .volume
-        case .grams, .ounces, .pounds:
-            .weight
-        default:
-            nil
-        }
-    }
 
     var displayName: String {
         switch self {
@@ -96,8 +77,6 @@ enum ConversionUnit: String, CaseIterable, Identifiable, Codable, Hashable {
         case .yards: "Yards"
         case .miles: "Miles"
         case .kilometers: "Kilometers"
-        case .inchesFraction: "Inches (Fractions)"
-        case .feetFraction: "Feet (Fractions)"
         case .teaspoons: "Teaspoons"
         case .tablespoons: "Tablespoons"
         case .fluidOunces: "Fluid Ounces"
@@ -124,10 +103,10 @@ enum ConversionUnit: String, CaseIterable, Identifiable, Codable, Hashable {
         case .fahrenheit: "°F"
         case .celsius: "°C"
         case .gasMark: "Gas"
-        case .inches, .inchesFraction: "in"
+        case .inches: "in"
         case .millimeters: "mm"
         case .centimeters: "cm"
-        case .feet, .feetFraction: "ft"
+        case .feet: "ft"
         case .meters: "m"
         case .yards: "yd"
         case .miles: "mi"
@@ -155,24 +134,21 @@ enum ConversionUnit: String, CaseIterable, Identifiable, Codable, Hashable {
 
     var acceptsFractions: Bool {
         switch self {
-        case .inchesFraction, .feetFraction: true
+        case .inches, .feet: true
         default: false
         }
     }
 
-    /// Canonical decimal unit used internally for conversion within a dimension.
-    var canonicalSibling: ConversionUnit {
-        switch self {
-        case .inchesFraction: .inches
-        case .feetFraction: .feet
-        default: self
-        }
+    static func units(for category: ConversionCategory) -> [ConversionUnit] {
+        category.units
     }
+}
 
-    static func units(for category: ConversionCategory, landscape: Bool) -> [ConversionUnit] {
-        if landscape || !category.hasLandscapeExtras {
-            return category.units
+extension ConversionUnit {
+    var isImperialLength: Bool {
+        switch self {
+        case .inches, .feet, .yards, .miles: true
+        default: false
         }
-        return category.portraitUnits
     }
 }

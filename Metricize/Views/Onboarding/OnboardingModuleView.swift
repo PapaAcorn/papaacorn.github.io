@@ -152,6 +152,12 @@ private struct OnboardingPageContentView: View {
         return contentHeight > viewportHeight + 8 && remaining > 24
     }
 
+    private var contentMinHeight: CGFloat {
+        if viewportHeight > 0 { return viewportHeight }
+        let isLandscape = geometry.size.width > geometry.size.height
+        return geometry.size.height * (isLandscape ? 0.72 : 0.68)
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
@@ -271,9 +277,9 @@ private struct OnboardingPageContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.horizontal, max(28, geometry.size.width * 0.08))
-        .padding(.vertical, isLandscape ? 4 : 8)
+        .padding(.vertical, 8)
         .padding(.bottom, showsMoreBelow ? 36 : 8)
-        .frame(minHeight: isLandscape ? 0 : geometry.size.height * 0.55, alignment: .center)
+        .frame(minHeight: contentMinHeight, alignment: .center)
     }
 
     private var scrollMoreIndicator: some View {

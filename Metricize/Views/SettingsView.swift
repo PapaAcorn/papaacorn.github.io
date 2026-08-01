@@ -11,6 +11,12 @@ struct SettingsView: View {
 
     let unlockStore: ModuleUnlockStore
     let temperatureProgress: TemperatureProgressStore
+    let kitchenProgress: KitchenProgressStore
+    let metricUnitsProgress: MetricUnitsProgressStore
+    let roadProgress: RoadProgressStore
+    let shopProgress: ShopProgressStore
+    let hereToThereProgress: HereToThereProgressStore
+    let gymProgress: GymProgressStore
 
     @State private var showResetAllConfirmation = false
 
@@ -18,7 +24,7 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 appearanceSection
-                learningSection
+                learningSettingsSection
                 progressSection
             }
             .padding(.horizontal, 20)
@@ -36,11 +42,23 @@ struct SettingsView: View {
             titleVisibility: .visible
         ) {
             Button("Reset All Progress", role: .destructive) {
-                unlockStore.resetAllProgress(temperatureStore: temperatureProgress)
+                showResetAllConfirmation = false
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(250))
+                    unlockStore.resetAllProgress(
+                        temperatureStore: temperatureProgress,
+                        kitchenStore: kitchenProgress,
+                        shopStore: shopProgress,
+                        metricUnitsStore: metricUnitsProgress,
+                        roadStore: roadProgress,
+                        hereToThereStore: hereToThereProgress,
+                        gymStore: gymProgress
+                    )
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This clears learning progress and requires viewing each module's introductory pages again before continuing.")
+            Text("This clears learning progress and introductory pages. You will see those again the next time you open each learning module.")
         }
     }
 
@@ -82,67 +100,41 @@ struct SettingsView: View {
         }
     }
 
-    private var learningSection: some View {
+    private var learningSettingsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("Learning")
+            sectionLabel("Learning Settings")
 
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Times correct to learn")
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(palette.textPrimary)
-                    Text("How many consecutive correct answers mark a temperature as learned.")
-                        .font(.caption)
-                        .foregroundStyle(palette.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                HStack(spacing: 16) {
-                    Button {
-                        if settings.requiredConsecutiveCorrect > 1 {
-                            settings.requiredConsecutiveCorrect -= 1
-                        }
-                    } label: {
-                        Image(systemName: "minus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(
-                                settings.requiredConsecutiveCorrect > 1
-                                    ? MetricTheme.warmEmber
-                                    : palette.textTertiary
-                            )
+            VStack(spacing: 0) {
+                SettingsStepperRow(
+                    title: "Repetition Threshold",
+                    subtitle: "Number of times you must be \"right\" for an item to be considered learned:",
+                    value: settings.requiredConsecutiveCorrect,
+                    range: 1...5,
+                    onDecrement: {
+                        settings.setRequiredConsecutiveCorrect(settings.requiredConsecutiveCorrect - 1)
+                    },
+                    onIncrement: {
+                        settings.setRequiredConsecutiveCorrect(settings.requiredConsecutiveCorrect + 1)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(settings.requiredConsecutiveCorrect <= 1)
+                )
 
-                    Text("\(settings.requiredConsecutiveCorrect)")
-                        .font(.title2.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(palette.textPrimary)
-                        .frame(minWidth: 32)
+                Divider()
+                    .overlay(palette.divider)
+                    .padding(.leading, 20)
 
-                    Button {
-                        if settings.requiredConsecutiveCorrect < 5 {
-                            settings.requiredConsecutiveCorrect += 1
-                        }
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(
-                                settings.requiredConsecutiveCorrect < 5
-                                    ? MetricTheme.warmEmber
-                                    : palette.textTertiary
-                            )
+                SettingsStepperRow(
+                    title: "Inside & Out - Accuracy Requirement",
+                    subtitle: "How accurate is close enough?",
+                    value: settings.accuracyToleranceDegrees,
+                    range: 0...5,
+                    onDecrement: {
+                        settings.setAccuracyToleranceDegrees(settings.accuracyToleranceDegrees - 1)
+                    },
+                    onIncrement: {
+                        settings.setAccuracyToleranceDegrees(settings.accuracyToleranceDegrees + 1)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(settings.requiredConsecutiveCorrect >= 5)
-
-                    Spacer()
-
-                    Text("1–5")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(palette.textTertiary)
-                }
+                )
             }
-            .padding(20)
             .background(settingsCardBackground)
         }
     }
@@ -159,7 +151,7 @@ struct SettingsView: View {
                         Text("Reset All Progress")
                             .font(.body.weight(.medium))
                             .foregroundStyle(Color(red: 1.0, green: 0.45, blue: 0.38))
-                        Text("Clears all module progress and intro completion.")
+                        Text("Clears module progress and intro completion.")
                             .font(.caption)
                             .foregroundStyle(palette.textSecondary)
                             .multilineTextAlignment(.leading)
@@ -194,11 +186,82 @@ struct SettingsView: View {
     }
 }
 
+private struct SettingsStepperRow: View {
+    @Environment(\.metricPalette) private var palette
+
+    let title: String
+    let subtitle: String
+    let value: Int
+    let range: ClosedRange<Int>
+    let onDecrement: () -> Void
+    let onIncrement: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(palette.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 16) {
+                Button(action: onDecrement) {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(
+                            value > range.lowerBound
+                                ? MetricTheme.warmEmber
+                                : palette.textTertiary
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(value <= range.lowerBound)
+
+                Text("\(value)")
+                    .font(.title2.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(palette.textPrimary)
+                    .frame(minWidth: 32)
+
+                Button(action: onIncrement) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(
+                            value < range.upperBound
+                                ? MetricTheme.warmEmber
+                                : palette.textTertiary
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(value >= range.upperBound)
+
+                Spacer()
+
+                Text("\(range.lowerBound)–\(range.upperBound)")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(palette.textTertiary)
+            }
+        }
+        .padding(20)
+    }
+}
+
 #Preview {
     NavigationStack {
         SettingsView(
             unlockStore: ModuleUnlockStore(),
-            temperatureProgress: TemperatureProgressStore()
+            temperatureProgress: TemperatureProgressStore(),
+            kitchenProgress: KitchenProgressStore(),
+            metricUnitsProgress: MetricUnitsProgressStore(),
+            roadProgress: RoadProgressStore(),
+            shopProgress: ShopProgressStore(),
+            hereToThereProgress: HereToThereProgressStore(),
+            gymProgress: GymProgressStore()
         )
     }
+    .environment(AppSettingsStore())
 }

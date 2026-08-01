@@ -4,198 +4,352 @@
 //
 
 import SwiftUI
-#if os(iOS)
-import UIKit
-#endif
 
 struct ConversionCalculatorView: View {
-    @State private var viewModel = ConversionCalculatorViewModel()
-    @State private var speechService = ConversionSpeechService()
-    @State private var showSpeechError = false
-    @State private var speechErrorMessage = ""
-    @State private var showUnitCalculator = false
+    @Bindable var viewModel: ConversionCalculatorViewModel
+
     @FocusState private var inputFocused: Bool
 
     @Environment(\.metricPalette) private var palette
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
+    init(viewModel: ConversionCalculatorViewModel = ConversionCalculatorViewModel()) {
+        self.viewModel = viewModel
+    }
+
     var body: some View {
         @Bindable var viewModel = viewModel
 
-        ScrollView {
-            VStack(spacing: 20) {
-                convertPanel(viewModel: viewModel)
-                swapControl
-                convertToPanel(viewModel: viewModel)
-                if viewModel.showsLandscapeHint {
-                    landscapeHintBanner
+        GeometryReader { geometry in
+            let layout = calculatorLayout(for: geometry.size)
+
+            ScrollView {
+                Group {
+                    switch layout {
+                    case .stacked:
+                        stackedContent(viewModel: viewModel)
+                    case .sideBySide:
+                        sideBySideContent(viewModel: viewModel, centersVertically: false)
+                    case .sideBySideCentered:
+                        sideBySideCenteredContent(viewModel: viewModel, availableHeight: geometry.size.height)
+                    }
                 }
-                if let error = viewModel.inputError {
-                    errorBanner(error)
-                }
-                actionRow
+                .padding(.horizontal, layout == .stacked ? 20 : 12)
+                .padding(.bottom, layout == .stacked ? 32 : 16)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 32)
+            .scrollDismissesKeyboard(.interactively)
         }
-        .scrollDismissesKeyboard(.interactively)
         .metricScreenBackground()
-        .navigationTitle("Conversion Calculator")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
-        .navigationDestination(isPresented: $showUnitCalculator) {
-            UnitCalculatorView(
-                category: viewModel.category,
-                unit: viewModel.sourceUnit
-            ) { value, category, unit in
-                viewModel.applyCalculatorResult(value: value, category: category, unit: unit)
+    }
+
+    private enum CalculatorLayout {
+        case stacked
+        case sideBySide
+        case sideBySideCentered
+    }
+
+    private func calculatorLayout(for size: CGSize) -> CalculatorLayout {
+        if horizontalSizeClass == .regular {
+            return size.width > size.height ? .sideBySideCentered : .stacked
+        }
+        return verticalSizeClass == .compact ? .sideBySide : .stacked
+    }
+
+    // MARK: - Layouts
+
+    private func stackedContent(viewModel: ConversionCalculatorViewModel) -> some View {
+        VStack(spacing: 20) {
+            convertPanel(viewModel: viewModel)
+            swapControl()
+            convertToPanel(viewModel: viewModel)
+            if let error = viewModel.inputError {
+                errorBanner(error)
             }
+            actionRow()
         }
-        .onAppear {
-            updateOrientation()
+    }
+
+    private func sideBySideContent(
+        viewModel: ConversionCalculatorViewModel,
+        centersVertically: Bool
+    ) -> some View {
+        VStack(spacing: 10) {
+            conversionColumnsRow(viewModel: viewModel, centersVertically: centersVertically)
+            conversionFooter(viewModel: viewModel)
         }
-        #if os(iOS)
-        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
-            updateOrientation()
+    }
+
+    private func sideBySideCenteredContent(
+        viewModel: ConversionCalculatorViewModel,
+        availableHeight: CGFloat
+    ) -> some View {
+        VStack(spacing: 10) {
+            Spacer(minLength: 0)
+
+            conversionColumnsRow(viewModel: viewModel, centersVertically: true)
+                .frame(maxWidth: .infinity)
+
+            Spacer(minLength: 0)
+
+            conversionFooter(viewModel: viewModel)
         }
-        #endif
-        .alert("Voice Input", isPresented: $showSpeechError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(speechErrorMessage)
+        .frame(minHeight: max(availableHeight - 16, 0))
+    }
+
+    private func conversionColumnsRow(
+        viewModel: ConversionCalculatorViewModel,
+        centersVertically: Bool
+    ) -> some View {
+        HStack(alignment: centersVertically ? .center : .top, spacing: 10) {
+            convertPanel(
+                viewModel: viewModel,
+                compact: true,
+                centersInputVertically: centersVertically && !inputFocused
+            )
+            .frame(maxWidth: .infinity, maxHeight: centersVertically ? .infinity : nil)
+
+            if centersVertically {
+                swapControl(compact: true)
+            } else {
+                VStack {
+                    Spacer(minLength: 36)
+                    swapControl(compact: true)
+                    Spacer(minLength: 0)
+                }
+            }
+
+            convertToPanel(
+                viewModel: viewModel,
+                compact: true,
+                centersOutputVertically: centersVertically
+            )
+            .frame(maxWidth: .infinity, maxHeight: centersVertically ? .infinity : nil)
+        }
+        .frame(minHeight: centersVertically ? 280 : nil)
+    }
+
+    private func conversionFooter(viewModel: ConversionCalculatorViewModel) -> some View {
+        VStack(spacing: 10) {
+            if let error = viewModel.inputError {
+                errorBanner(error)
+            }
+
+            HStack {
+                Spacer()
+                actionRow(compact: true)
+                Spacer()
+            }
         }
     }
 
     // MARK: - Panels
 
-    private func convertPanel(viewModel: ConversionCalculatorViewModel) -> some View {
+    private func convertPanel(
+        viewModel: ConversionCalculatorViewModel,
+        compact: Bool = false,
+        centersInputVertically: Bool = false
+    ) -> some View {
         @Bindable var viewModel = viewModel
 
-        return VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                sectionHeader("Convert")
-                Spacer()
-                CalculatorLaunchButton {
-                    inputFocused = false
-                    showUnitCalculator = true
+        return VStack(alignment: .leading, spacing: compact ? 10 : 14) {
+            sectionHeader("Convert")
+
+            if compact {
+                HStack(spacing: 10) {
+                    ConversionCategoryMenu(selection: $viewModel.category)
+                        .frame(maxWidth: .infinity)
+                    ConversionUnitMenu(
+                        title: "From unit",
+                        units: viewModel.availableUnits,
+                        selection: $viewModel.sourceUnit,
+                        category: viewModel.category
+                    )
+                    .frame(maxWidth: .infinity)
+                    .onChange(of: viewModel.sourceUnit) { _, newUnit in
+                        viewModel.selectSourceUnit(newUnit)
+                    }
+                }
+            } else {
+                VStack(spacing: 10) {
+                    ConversionCategoryMenu(selection: $viewModel.category)
+                    ConversionUnitMenu(
+                        title: "From unit",
+                        units: viewModel.availableUnits,
+                        selection: $viewModel.sourceUnit,
+                        category: viewModel.category
+                    )
+                    .onChange(of: viewModel.sourceUnit) { _, newUnit in
+                        viewModel.selectSourceUnit(newUnit)
+                    }
                 }
             }
 
-            ConversionCategoryMenu(selection: $viewModel.category)
-
-            ConversionUnitMenu(
-                title: "From unit",
-                units: viewModel.availableUnits,
-                selection: $viewModel.sourceUnit,
-                category: viewModel.category
-            )
-            .onChange(of: viewModel.sourceUnit) { _, newUnit in
-                viewModel.selectSourceUnit(newUnit)
+            if centersInputVertically {
+                Spacer(minLength: 0)
             }
 
-            inputField(viewModel: viewModel)
+            inputField(viewModel: viewModel, compact: compact)
+
+            if centersInputVertically {
+                Spacer(minLength: 0)
+            }
 
             if inputFocused {
                 ConversionKeypadView(
-                    allowsFractions: viewModel.sourceUnit.acceptsFractions || viewModel.category == .construction,
-                    allowsMixedLength: viewModel.supportsMixedLengthInput,
+                    fractionToggleLabel: viewModel.fractionToggleLabel,
+                    compact: compact,
                     onToken: { viewModel.appendInput($0) },
                     onBackspace: { viewModel.backspace() },
-                    onClear: { viewModel.clearInput() }
+                    onClear: { viewModel.clearInput() },
+                    onToggleFractionDecimal: { viewModel.toggleInputFractionDecimal() }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .panelStyle()
+        .panelStyle(compact: compact)
     }
 
-    private func convertToPanel(viewModel: ConversionCalculatorViewModel) -> some View {
+    private func convertToPanel(
+        viewModel: ConversionCalculatorViewModel,
+        compact: Bool = false,
+        centersOutputVertically: Bool = false
+    ) -> some View {
         @Bindable var viewModel = viewModel
 
-        return VStack(alignment: .leading, spacing: 14) {
-            sectionHeader("Convert to")
+        return VStack(alignment: .leading, spacing: compact ? 10 : 14) {
+            HStack {
+                sectionHeader("Convert to")
+                Spacer()
+                if viewModel.showsOutputFormatToggle {
+                    outputFormatToggle(viewModel: viewModel)
+                }
+            }
 
             ConversionUnitMenu(
                 title: "To unit",
                 units: viewModel.availableUnits,
                 selection: $viewModel.targetUnit,
                 sourceUnit: viewModel.sourceUnit,
-                category: viewModel.category,
-                showsCompatibility: viewModel.showsKitchenCompatibility
+                category: viewModel.category
             )
             .onChange(of: viewModel.targetUnit) { _, newUnit in
                 viewModel.selectTargetUnit(newUnit)
             }
 
-            resultDisplay
+            if centersOutputVertically {
+                Spacer(minLength: 0)
+            }
+
+            resultDisplay(viewModel: viewModel, compact: compact)
+
+            if centersOutputVertically {
+                Spacer(minLength: 0)
+            }
         }
-        .panelStyle()
+        .panelStyle(compact: compact)
     }
 
-    private func inputField(viewModel: ConversionCalculatorViewModel) -> some View {
+    private func inputField(
+        viewModel: ConversionCalculatorViewModel,
+        compact: Bool = false
+    ) -> some View {
         @Bindable var viewModel = viewModel
-        let allowsFractions = viewModel.sourceUnit.acceptsFractions || viewModel.category == .construction
-        let placeholder = viewModel.inputPlaceholder
 
         return VStack(alignment: .leading, spacing: 6) {
             TextField(
-                placeholder,
+                viewModel.inputPlaceholder,
                 text: $viewModel.inputText
             )
-            .font(.system(size: 34, weight: .light, design: .rounded))
+            .font(.system(size: compact ? 22 : 26, weight: .light, design: .rounded))
             .foregroundStyle(palette.textPrimary)
             .focused($inputFocused)
             #if os(iOS)
-            .keyboardType(allowsFractions ? .numbersAndPunctuation : .decimalPad)
+            .keyboardType(.numbersAndPunctuation)
             #endif
             .textFieldStyle(.plain)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
             .onChange(of: viewModel.inputText) { _, _ in
                 viewModel.performConversion()
             }
             .accessibilityLabel("Source value")
             .accessibilityValue(viewModel.sourceDisplayText)
+            .padding(compact ? 12 : 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(displayBackground)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                inputFocused = true
+            }
 
             Text(viewModel.sourceUnit.symbol)
-                .font(.subheadline.weight(.medium))
+                .font(compact ? .caption.weight(.medium) : .subheadline.weight(.medium))
                 .foregroundStyle(palette.textSecondary)
-        }
-        .padding(16)
-        .background(displayBackground)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            inputFocused = true
         }
     }
 
-    private var resultDisplay: some View {
+    private func resultDisplay(
+        viewModel: ConversionCalculatorViewModel,
+        compact: Bool = false
+    ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             if let result = viewModel.result {
                 Text(result.formattedValue)
-                    .font(.system(size: 34, weight: .light, design: .rounded))
+                    .font(.system(size: compact ? 28 : 34, weight: .light, design: .rounded))
                     .foregroundStyle(palette.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .lineLimit(2)
+                    .lineLimit(3)
                     .minimumScaleFactor(0.6)
                     .textSelection(.enabled)
                     .accessibilityLabel("Converted result")
                     .accessibilityValue(result.copyableOutput)
 
-                Text(viewModel.targetUnit.symbol)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(palette.textSecondary)
+                if let secondary = result.secondaryFormattedValue {
+                    Text(secondary)
+                        .font(compact ? .caption.weight(.medium) : .subheadline.weight(.medium))
+                        .foregroundStyle(palette.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                        .accessibilityLabel("Precise converted value")
+                } else {
+                    Text(viewModel.targetUnit.symbol)
+                        .font(compact ? .caption.weight(.medium) : .subheadline.weight(.medium))
+                        .foregroundStyle(palette.textSecondary)
+                }
             } else {
                 Text("—")
-                    .font(.system(size: 34, weight: .light, design: .rounded))
+                    .font(.system(size: compact ? 28 : 34, weight: .light, design: .rounded))
                     .foregroundStyle(palette.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("Converted result")
                     .accessibilityValue("No result yet")
             }
         }
-        .padding(16)
+        .padding(compact ? 12 : 16)
         .background(displayBackground)
+    }
+
+    private func outputFormatToggle(viewModel: ConversionCalculatorViewModel) -> some View {
+        Button {
+            viewModel.toggleOutputFractionDecimal()
+        } label: {
+            Text(viewModel.outputFractionToggleLabel)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(palette.textPrimary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background {
+                    Capsule(style: .continuous)
+                        .fill(palette.chipFill)
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .strokeBorder(palette.chipStroke, lineWidth: 1)
+                        }
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Toggle fraction or decimal output")
     }
 
     private var displayBackground: some View {
@@ -210,88 +364,28 @@ struct ConversionCalculatorView: View {
             }
     }
 
-    private var swapControl: some View {
-        HStack {
-            Spacer()
-            Button {
-                viewModel.swapUnits()
-            } label: {
-                Image(systemName: "arrow.up.arrow.down.circle.fill")
-                    .font(.title2)
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(MetricTheme.coolFrost)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Swap units")
-            Spacer()
-        }
-    }
-
-    private var actionRow: some View {
-        HStack(spacing: 12) {
-            #if os(iOS)
-            Button {
-                inputFocused = false
-                startVoiceInput()
-            } label: {
-                Label(
-                    speechService.isListening ? "Listening…" : "Speak",
-                    systemImage: speechService.isListening ? "waveform.circle.fill" : "mic.circle.fill"
-                )
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .foregroundStyle(palette.textPrimary)
-                .background {
-                    Capsule(style: .continuous)
-                        .fill(palette.chipFill)
-                        .overlay {
-                            Capsule(style: .continuous)
-                                .strokeBorder(palette.chipStroke, lineWidth: 1)
-                        }
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Voice input")
-            #endif
-
-            PrimaryActionButton(title: "Convert", isEnabled: !viewModel.inputText.isEmpty) {
-                inputFocused = false
-                viewModel.performConversion()
-            }
-        }
-    }
-
-    private var landscapeHintBanner: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "iphone.landscape")
+    private func swapControl(compact: Bool = false) -> some View {
+        Button {
+            viewModel.swapUnits()
+        } label: {
+            Image(systemName: compact ? "arrow.left.arrow.right.circle.fill" : "arrow.up.arrow.down.circle.fill")
+                .font(compact ? .title3 : .title2)
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(MetricTheme.coolFrost)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("More units in landscape")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(palette.textPrimary)
-                Text("Rotate your phone to see additional units for this category.")
-                    .font(.caption)
-                    .foregroundStyle(palette.textSecondary)
-            }
-            Spacer()
-            Button {
-                viewModel.dismissLandscapeHint()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(palette.textTertiary)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Dismiss hint")
         }
-        .padding(14)
-        .background {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(palette.cardFill)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(MetricTheme.coolFrost.opacity(0.35), lineWidth: 1)
-                }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Swap units")
+        .frame(maxWidth: compact ? nil : .infinity)
+    }
+
+    private func actionRow(compact: Bool = false) -> some View {
+        PrimaryActionButton(
+            title: "Convert",
+            isEnabled: !viewModel.inputText.isEmpty,
+            compact: compact
+        ) {
+            inputFocused = false
+            viewModel.performConversion()
         }
     }
 
@@ -318,63 +412,23 @@ struct ConversionCalculatorView: View {
             .tracking(1.4)
             .foregroundStyle(palette.textTertiary)
     }
-
-    // MARK: - Voice
-
-    private func startVoiceInput() {
-        Task {
-            let authorized = await speechService.requestAuthorization()
-            guard authorized else {
-                speechErrorMessage = "Speech recognition permission is required for voice input. You can still type conversions manually."
-                showSpeechError = true
-                return
-            }
-
-            speechService.startListening { transcript in
-                if let request = VoiceConversionParser.parse(transcript) {
-                    viewModel.applyVoiceRequest(request)
-                } else {
-                    speechErrorMessage = "Couldn't understand that phrase. Try saying something like \"Convert 72 Fahrenheit to Celsius.\""
-                    showSpeechError = true
-                }
-            } onError: { error in
-                switch error {
-                case .unavailable:
-                    speechErrorMessage = "Speech recognition isn't available on this device. Type your conversion instead."
-                case .permissionDenied:
-                    speechErrorMessage = "Microphone access was denied. Enable it in Settings or type your conversion."
-                case .recognitionFailed:
-                    speechErrorMessage = "Couldn't capture speech. Try again or type your conversion."
-                }
-                showSpeechError = true
-            }
-        }
-    }
-
-    private func updateOrientation() {
-        #if os(iOS)
-        let landscape = UIDevice.current.orientation.isLandscape
-            || (horizontalSizeClass == .regular && verticalSizeClass == .compact)
-        viewModel.updateLandscape(landscape)
-        #else
-        viewModel.updateLandscape(false)
-        #endif
-    }
 }
 
 // MARK: - Panel styling
 
 private struct PanelStyle: ViewModifier {
+    var compact: Bool = false
+
     @Environment(\.metricPalette) private var palette
 
     func body(content: Content) -> some View {
         content
-            .padding(18)
+            .padding(compact ? 12 : 18)
             .background {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: compact ? 16 : 20, style: .continuous)
                     .fill(palette.cardFill)
                     .overlay {
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        RoundedRectangle(cornerRadius: compact ? 16 : 20, style: .continuous)
                             .strokeBorder(palette.glassStroke, lineWidth: 1)
                     }
             }
@@ -382,8 +436,8 @@ private struct PanelStyle: ViewModifier {
 }
 
 private extension View {
-    func panelStyle() -> some View {
-        modifier(PanelStyle())
+    func panelStyle(compact: Bool = false) -> some View {
+        modifier(PanelStyle(compact: compact))
     }
 }
 

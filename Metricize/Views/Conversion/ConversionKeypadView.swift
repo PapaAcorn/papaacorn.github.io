@@ -6,13 +6,17 @@
 import SwiftUI
 
 struct ConversionKeypadView: View {
-    let allowsFractions: Bool
-    var allowsMixedLength: Bool = false
+    let fractionToggleLabel: String
+    var compact: Bool = false
     let onToken: (String) -> Void
     let onBackspace: () -> Void
     let onClear: () -> Void
+    let onToggleFractionDecimal: () -> Void
 
     @Environment(\.metricPalette) private var palette
+
+    private var buttonHeight: CGFloat { compact ? 40 : 48 }
+    private var rowSpacing: CGFloat { compact ? 8 : 10 }
 
     private let rows: [[KeypadKey]] = [
         [.digit("1"), .digit("2"), .digit("3")],
@@ -22,22 +26,18 @@ struct ConversionKeypadView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: rowSpacing) {
             ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                HStack(spacing: 10) {
+                HStack(spacing: rowSpacing) {
                     ForEach(row) { key in
                         keypadButton(key)
                     }
                 }
             }
 
-            HStack(spacing: 10) {
-                if allowsMixedLength {
-                    keypadButton(.comma)
-                }
-                if allowsFractions {
-                    keypadButton(.fraction)
-                }
+            HStack(spacing: rowSpacing) {
+                keypadButton(.fraction)
+                keypadButton(.fractionToggle)
                 keypadButton(.backspace)
                 keypadButton(.clear)
             }
@@ -56,8 +56,8 @@ struct ConversionKeypadView: View {
                 onToken(" ")
             case .fraction:
                 onToken("/")
-            case .comma:
-                onToken(",")
+            case .fractionToggle:
+                onToggleFractionDecimal()
             case .backspace:
                 onBackspace()
             case .clear:
@@ -75,9 +75,9 @@ struct ConversionKeypadView: View {
                 case .fraction:
                     Text("/")
                         .font(.title2.weight(.medium).monospacedDigit())
-                case .comma:
-                    Text(",")
-                        .font(.title2.weight(.medium).monospacedDigit())
+                case .fractionToggle:
+                    Text(fractionToggleLabel)
+                        .font(.subheadline.weight(.semibold))
                 case .space:
                     Text("␣")
                         .font(.caption.weight(.bold))
@@ -90,7 +90,7 @@ struct ConversionKeypadView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 48)
+            .frame(height: buttonHeight)
             .foregroundStyle(palette.textPrimary)
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -102,7 +102,7 @@ struct ConversionKeypadView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(key.accessibilityLabel)
+        .accessibilityLabel(key.accessibilityLabel(fractionToggleLabel: fractionToggleLabel))
     }
 }
 
@@ -111,7 +111,7 @@ private enum KeypadKey: Identifiable {
     case decimal
     case space
     case fraction
-    case comma
+    case fractionToggle
     case backspace
     case clear
 
@@ -121,19 +121,19 @@ private enum KeypadKey: Identifiable {
         case .decimal: "decimal"
         case .space: "space"
         case .fraction: "fraction"
-        case .comma: "comma"
+        case .fractionToggle: "fraction-toggle"
         case .backspace: "backspace"
         case .clear: "clear"
         }
     }
 
-    var accessibilityLabel: String {
+    func accessibilityLabel(fractionToggleLabel: String) -> String {
         switch self {
         case .digit(let value): value
         case .decimal: "Decimal point"
         case .space: "Space"
         case .fraction: "Fraction slash"
-        case .comma: "Comma"
+        case .fractionToggle: "Toggle fraction or decimal (\(fractionToggleLabel))"
         case .backspace: "Backspace"
         case .clear: "Clear"
         }

@@ -8,8 +8,16 @@ import SwiftUI
 struct InsideAndOutModuleView: View {
     let unlockStore: ModuleUnlockStore
     let progressStore: TemperatureProgressStore
+    let kitchenProgress: KitchenProgressStore
+    let metricUnitsProgress: MetricUnitsProgressStore
+    let roadProgress: RoadProgressStore
+    let shopProgress: ShopProgressStore
+    let hereToThereProgress: HereToThereProgressStore
+    let gymProgress: GymProgressStore
 
+    @Environment(AppSettingsStore.self) private var settings
     @State private var route: InsideAndOutRoute?
+    @State private var learningSessionID = UUID()
 
     private var activeRoute: InsideAndOutRoute {
         route ?? (AppModule.hasCompletedInsideAndOutIntro(in: unlockStore) ? .learning : .intro)
@@ -30,9 +38,25 @@ struct InsideAndOutModuleView: View {
             case .learning:
                 TemperatureGameView(
                     progressStore: progressStore,
+                    settings: settings,
                     onResetModule: resetLearningProgress,
                     onReviewBasics: { route = .introReview }
                 )
+                .id(learningSessionID)
+                .toolbar {
+                    ToolbarItem(placement: .automatic) {
+                        SettingsToolbarLink(
+                            unlockStore: unlockStore,
+                            temperatureProgress: progressStore,
+                            kitchenProgress: kitchenProgress,
+                            metricUnitsProgress: metricUnitsProgress,
+                            roadProgress: roadProgress,
+                            shopProgress: shopProgress,
+                            hereToThereProgress: hereToThereProgress,
+                            gymProgress: gymProgress
+                        )
+                    }
+                }
             case .introReview:
                 OnboardingModuleView(
                     module: .insideAndOut,
@@ -49,6 +73,7 @@ struct InsideAndOutModuleView: View {
     private func resetLearningProgress() {
         progressStore.resetProgress()
         unlockStore.clearInsideAndOutIntro()
+        learningSessionID = UUID()
         route = .intro
     }
 }

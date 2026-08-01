@@ -25,6 +25,21 @@ final class ModuleUnlockStore {
                 || isComplete(.insideOutsideBasics)
                 || isComplete(.learnInsideOutside)
         }
+        if module == .inTheKitchen {
+            return isComplete(.howToUse) || isComplete(.kitchenBasics)
+        }
+        if module == .inTheShop {
+            return isComplete(.howToUse) || isComplete(.shopBasics)
+        }
+        if module == .onTheRoad {
+            return isComplete(.howToUse) || isComplete(.roadBasics)
+        }
+        if module == .hereToThere {
+            return isComplete(.howToUse) || isComplete(.hereToThereBasics)
+        }
+        if module == .atTheGym {
+            return isComplete(.howToUse) || isComplete(.gymBasics)
+        }
         guard let prerequisite = module.prerequisite() else { return true }
         return completedModules.contains(prerequisite)
     }
@@ -43,15 +58,48 @@ final class ModuleUnlockStore {
         clearCompletion(AppModule.insideAndOutIntroCompletion)
     }
 
-    /// Clears all module completion flags and learning progress. User must re-read intro pages.
-    func resetAllProgress(temperatureStore: TemperatureProgressStore) {
-        completedModules = []
-        temperatureStore.resetProgress()
-        save()
+    func clearKitchenIntro() {
+        clearCompletion(AppModule.kitchenIntroCompletion)
     }
 
-    func resetAll() {
+    func clearShopIntro() {
+        clearCompletion(AppModule.shopIntroCompletion)
+    }
+
+    func clearRoadIntro() {
+        clearCompletion(AppModule.roadIntroCompletion)
+    }
+
+    func clearHereToThereIntro() {
+        clearCompletion(AppModule.hereToThereIntroCompletion)
+    }
+
+    func clearGymIntro() {
+        clearCompletion(AppModule.gymIntroCompletion)
+    }
+
+    func clearMetricUnitsIntro() {
+        clearCompletion(.metricUnitsIntro)
+    }
+
+    /// Clears all module completion flags and learning progress. User must re-read intro pages.
+    func resetAllProgress(
+        temperatureStore: TemperatureProgressStore,
+        kitchenStore: KitchenProgressStore? = nil,
+        shopStore: ShopProgressStore? = nil,
+        metricUnitsStore: MetricUnitsProgressStore? = nil,
+        roadStore: RoadProgressStore? = nil,
+        hereToThereStore: HereToThereProgressStore? = nil,
+        gymStore: GymProgressStore? = nil
+    ) {
         completedModules = []
+        temperatureStore.resetProgress()
+        kitchenStore?.resetProgress()
+        shopStore?.resetProgress()
+        metricUnitsStore?.resetProgress()
+        roadStore?.resetProgress()
+        hereToThereStore?.resetProgress()
+        gymStore?.resetProgress()
         save()
     }
 

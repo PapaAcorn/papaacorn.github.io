@@ -12,8 +12,11 @@ struct ThermometerSliderView: View {
     let isEnabled: Bool
     var layout: ChallengeLayout = .stacked
     var compact: Bool = false
+    var showsAccuracyToleranceNote: Bool = true
+    var showsStepButtons: Bool = false
 
     @Environment(\.metricPalette) private var palette
+    @Environment(AppSettingsStore.self) private var settings
 
     private let range = Double(TemperatureGameConstants.fahrenheitMin)...Double(TemperatureGameConstants.fahrenheitMax)
 
@@ -40,14 +43,22 @@ struct ThermometerSliderView: View {
         TemperaturePromptView(
             value: celsius,
             unit: "°C",
-            caption: label,
-            hint: "Drag the marker on the Fahrenheit scale"
+            compact: compact
         )
     }
 
     private var sliderControls: some View {
-        HStack(alignment: .center, spacing: 28) {
+        HStack(alignment: .center, spacing: compact ? 16 : 28) {
+            if showsStepButtons {
+                temperatureStepButton(delta: -1)
+            }
+
             thermometerTrack
+
+            if showsStepButtons {
+                temperatureStepButton(delta: 1)
+            }
+
             fahrenheitReadout
         }
         .frame(maxHeight: sliderMaxHeight)
@@ -143,8 +154,9 @@ struct ThermometerSliderView: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             guard isEnabled else { return }
-                            let clampedY = min(max(value.location.y, 12), height - 36)
-                            selectedFahrenheit = fahrenheit(for: clampedY, in: height)
+                            let bounds = TemperatureSliderGeometry.dragBounds(in: height)
+                            let clampedY = min(max(value.location.y, bounds.lowerBound), bounds.upperBound)
+                            selectedFahrenheit = TemperatureSliderGeometry.value(at: clampedY, in: range, height: height)
                         }
                 )
                 .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.78), value: selectedFahrenheit)
@@ -164,6 +176,7 @@ struct ThermometerSliderView: View {
                 Text("\(Int(selectedFahrenheit.rounded()))")
                     .font(.system(size: 52, weight: .thin, design: .rounded))
                     .foregroundStyle(guessHue)
+                    .monospacedDigit()
                     .contentTransition(.numericText())
 
                 Text("°F")
@@ -171,10 +184,13 @@ struct ThermometerSliderView: View {
                     .foregroundStyle(palette.textSecondary)
             }
 
-            Text("±\(TemperatureGameConstants.toleranceDegrees)° counts")
+            Text("±\(settings.accuracyToleranceDegrees)° counts")
                 .font(.caption2)
                 .foregroundStyle(palette.textTertiary)
                 .multilineTextAlignment(.center)
+                .opacity(showsAccuracyToleranceNote ? 1 : 0)
+                .frame(height: showsAccuracyToleranceNote ? nil : 0)
+                .clipped()
         }
         .frame(width: 110)
         .padding(.vertical, 16)
@@ -182,8 +198,8 @@ struct ThermometerSliderView: View {
     }
 
     private func tickMarks(in height: CGFloat) -> some View {
-        let ticks = [110, 86, 68, 50, 32, 14, 0]
-        let majorTicks: Set<Int> = [110, 68, 32, 0]
+        let ticks = [-10, 0, 32, 50, 68, 86, 110]
+        let majorTicks: Set<Int> = [-10, 32, 68, 110]
         return ZStack(alignment: .topLeading) {
             ForEach(ticks, id: \.self) { tick in
                 HStack(spacing: 6) {
@@ -200,13 +216,25 @@ struct ThermometerSliderView: View {
     }
 
     private func yPosition(for fahrenheit: Double, in height: CGFloat) -> CGFloat {
-        let normalized = (fahrenheit - range.lowerBound) / (range.upperBound - range.lowerBound)
-        return height - CGFloat(normalized) * (height - 48) - 24
+        TemperatureSliderGeometry.yPosition(for: fahrenheit, in: range, height: height)
     }
 
-    private func fahrenheit(for y: CGFloat, in height: CGFloat) -> Double {
-        let normalized = 1 - (y - 24) / (height - 48)
-        let value = range.lowerBound + Double(normalized) * (range.upperBound - range.lowerBound)
-        return min(max(value, range.lowerBound), range.upperBound)
+    private func temperatureStepButton(delta: Int) -> some View {
+        Button {
+            let next = Int(selectedFahrenheit.rounded()) + delta
+            guard range.contains(Double(next)) else { return }
+            selectedFahrenheit = Double(next)
+        } label: {
+            Text(delta > 0 ? "+1" : "−1")
+                .font(.headline.weight(.bold).monospacedDigit())
+                .frame(width: compact ? 40 : 48, height: compact ? 40 : 48)
+                .foregroundStyle(guessHue)
+                .background {
+                    Circle()
+                        .fill(guessHue.opacity(0.14))
+                }
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
     }
 }

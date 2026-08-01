@@ -8,7 +8,20 @@ import Foundation
 struct ConversionResult: Equatable {
     let numericValue: Double
     let formattedValue: String
+    let secondaryFormattedValue: String?
     let copyableOutput: String
+
+    init(
+        numericValue: Double,
+        formattedValue: String,
+        secondaryFormattedValue: String? = nil,
+        copyableOutput: String
+    ) {
+        self.numericValue = numericValue
+        self.formattedValue = formattedValue
+        self.secondaryFormattedValue = secondaryFormattedValue
+        self.copyableOutput = copyableOutput
+    }
 }
 
 enum ConversionEngineError: Error, Equatable {
@@ -32,13 +45,10 @@ struct ConversionEngine {
             return convertTemperature(value: value, from: source, to: target)
         }
 
-        let sourceCanonical = source.canonicalSibling
-        let targetCanonical = target.canonicalSibling
-
-        guard let family = measureFamily(for: sourceCanonical) else {
+        guard let family = measureFamily(for: source) else {
             return .failure(.incompatibleUnits)
         }
-        guard measureFamily(for: targetCanonical) == family else {
+        guard measureFamily(for: target) == family else {
             return .failure(.incompatibleUnits)
         }
 
@@ -46,17 +56,17 @@ struct ConversionEngine {
         let converted: Double
         switch family {
         case .length:
-            baseValue = value * metersPerUnit(sourceCanonical)
-            converted = baseValue / metersPerUnit(targetCanonical)
+            baseValue = value * metersPerUnit(source)
+            converted = baseValue / metersPerUnit(target)
         case .volume:
-            baseValue = value * litersPerUnit(sourceCanonical)
-            converted = baseValue / litersPerUnit(targetCanonical)
+            baseValue = value * litersPerUnit(source)
+            converted = baseValue / litersPerUnit(target)
         case .weight:
-            baseValue = value * kilogramsPerUnit(sourceCanonical)
-            converted = baseValue / kilogramsPerUnit(targetCanonical)
+            baseValue = value * kilogramsPerUnit(source)
+            converted = baseValue / kilogramsPerUnit(target)
         case .speed:
-            baseValue = value * metersPerSecondPerUnit(sourceCanonical)
-            converted = baseValue / metersPerSecondPerUnit(targetCanonical)
+            baseValue = value * metersPerSecondPerUnit(source)
+            converted = baseValue / metersPerSecondPerUnit(target)
         }
 
         return .success(converted)
@@ -67,11 +77,13 @@ struct ConversionEngine {
     }
 
     private static func measureFamily(for unit: ConversionUnit) -> MeasureFamily? {
-        if isLengthUnit(unit) { return .length }
-        if unit.kitchenMeasureKind == .volume || unit.primaryCategory == .volume { return .volume }
-        if unit.kitchenMeasureKind == .weight || unit.primaryCategory == .weight { return .weight }
-        if unit.primaryCategory == .speed { return .speed }
-        return nil
+        switch unit.primaryCategory {
+        case .distance: .length
+        case .volume: .volume
+        case .weight: .weight
+        case .speed: .speed
+        default: nil
+        }
     }
 
     static func convert(input: String, from source: ConversionUnit, to target: ConversionUnit, category: ConversionCategory? = nil) -> Result<ConversionResult, ConversionEngineError> {
@@ -85,9 +97,22 @@ struct ConversionEngine {
 
         switch convert(value: numericValue, from: source, to: target, category: category) {
         case .success(let converted):
-            let formatted = ConversionFormatting.format(value: converted, unit: target)
-            let copyable = ConversionFormatting.copyableOutput(value: converted, unit: target)
-            return .success(ConversionResult(numericValue: converted, formattedValue: formatted, copyableOutput: copyable))
+            let resolvedCategory = category ?? source.primaryCategory
+            let formatted = ConversionFormatting.format(
+                value: converted,
+                unit: target,
+                category: resolvedCategory
+            )
+            let copyable = ConversionFormatting.copyableOutput(
+                value: converted,
+                unit: target,
+                category: resolvedCategory
+            )
+            return .success(ConversionResult(
+                numericValue: converted,
+                formattedValue: formatted,
+                copyableOutput: copyable
+            ))
         case .failure(let error):
             return .failure(error)
         }
@@ -97,39 +122,15 @@ struct ConversionEngine {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .failure(.invalidInput) }
 
-        if isLengthSource(source, category: category),
-           MixedLengthParser.looksLikeMixedLength(trimmed) {
-            switch MixedLengthParser.parseToSourceUnitValue(trimmed, sourceUnit: source) {
-            case .success(let value):
-                return .success(value)
-            case .failure:
-                break
+        switch FractionParser.parse(trimmed) {
+        case .success(let parsed):
+            return .success(parsed)
+        case .failure:
+            guard let decimal = Double(trimmed.replacingOccurrences(of: ",", with: "")) else {
+                return .failure(.invalidInput)
             }
+            return .success(decimal)
         }
-
-        if source.acceptsFractions || source == .inches || source == .feet {
-            switch FractionParser.parse(trimmed) {
-            case .success(let parsed):
-                return .success(parsed)
-            case .failure:
-                guard let decimal = Double(trimmed.replacingOccurrences(of: ",", with: "")) else {
-                    return .failure(.invalidInput)
-                }
-                return .success(decimal)
-            }
-        }
-
-        guard let decimal = Double(trimmed.replacingOccurrences(of: ",", with: "")) else {
-            return .failure(.invalidInput)
-        }
-        return .success(decimal)
-    }
-
-    private static func isLengthSource(_ source: ConversionUnit, category: ConversionCategory?) -> Bool {
-        if let category, category == .distance || category == .construction {
-            return true
-        }
-        return source.primaryCategory == .distance || source.primaryCategory == .construction
     }
 
     // MARK: - Temperature
@@ -208,17 +209,13 @@ struct ConversionEngine {
     }
 
     static func isLengthCompatible(_ source: ConversionUnit, _ target: ConversionUnit) -> Bool {
-        isLengthUnit(source.canonicalSibling) && isLengthUnit(target.canonicalSibling)
-    }
-
-    private static func isLengthUnit(_ unit: ConversionUnit) -> Bool {
-        unit.primaryCategory == .distance || unit.primaryCategory == .construction
+        source.primaryCategory == .distance && target.primaryCategory == .distance
     }
 
     private static func metersPerUnit(_ unit: ConversionUnit) -> Double {
         switch unit {
-        case .inches, .inchesFraction: 0.0254
-        case .feet, .feetFraction: 0.3048
+        case .inches: 0.0254
+        case .feet: 0.3048
         case .yards: 0.9144
         case .miles: 1609.344
         case .millimeters: 0.001

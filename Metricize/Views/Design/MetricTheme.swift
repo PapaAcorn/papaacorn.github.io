@@ -17,17 +17,8 @@ enum MetricTheme {
     static let coolDeep = Color(red: 0.22, green: 0.48, blue: 0.82)
 
     static let success = Color(red: 0.36, green: 0.84, blue: 0.58)
-    static let successSoft = Color(red: 0.28, green: 0.72, blue: 0.48)
-
-    // MARK: - Legacy dark surfaces (prefer metricPalette in views)
 
     static let ink = Color(red: 0.07, green: 0.08, blue: 0.12)
-    static let inkElevated = Color(red: 0.11, green: 0.12, blue: 0.18)
-    static let inkSoft = Color(red: 0.16, green: 0.17, blue: 0.24)
-
-    static let textPrimary = Color.white.opacity(0.95)
-    static let textSecondary = Color.white.opacity(0.62)
-    static let textTertiary = Color.white.opacity(0.38)
 
     // MARK: - Temperature ambience
 
@@ -54,29 +45,6 @@ enum MetricTheme {
     }
 
     // MARK: - Gradients
-
-    static let homeHero = LinearGradient(
-        colors: [
-            Color(red: 0.18, green: 0.22, blue: 0.42),
-            Color(red: 0.10, green: 0.11, blue: 0.20),
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
-    static func moduleGradient(tint: Color) -> LinearGradient {
-        LinearGradient(
-            colors: [tint.opacity(0.55), tint.opacity(0.12)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    static let glassStroke = LinearGradient(
-        colors: [.white.opacity(0.35), .white.opacity(0.08)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
 
     static let primaryButton = LinearGradient(
         colors: [warmEmber, Color(red: 0.95, green: 0.38, blue: 0.22)],
@@ -206,25 +174,6 @@ struct MetricScreenBackground: ViewModifier {
 }
 
 extension View {
-    func metricHaptic(_ style: MetricHapticStyle) {
-        #if os(iOS)
-        switch style {
-        case .light:
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        case .success:
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-        case .warning:
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
-        }
-        #endif
-    }
-}
-
-enum MetricHapticStyle {
-    case light, success, warning
-}
-
-extension View {
     func glassCard(cornerRadius: CGFloat = 20, padding: CGFloat = 0) -> some View {
         modifier(GlassCardModifier(cornerRadius: cornerRadius, padding: padding))
     }
@@ -239,8 +188,6 @@ extension View {
 struct TemperaturePromptView: View {
     let value: Int
     let unit: String
-    var caption: String?
-    var hint: String?
     var compact: Bool = false
 
     @Environment(\.metricPalette) private var palette
@@ -251,75 +198,25 @@ struct TemperaturePromptView: View {
     }
 
     var body: some View {
-        VStack(spacing: compact ? 6 : 10) {
-            if let caption {
-                Text("Hint: \(caption)")
-                    .font(compact ? .subheadline.weight(.medium) : .title3.weight(.medium))
-                    .foregroundStyle(palette.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
-                    .padding(.horizontal, 8)
-                    .lineLimit(compact ? 3 : nil)
-            }
-
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(value)")
-                    .font(.system(size: compact ? 48 : 72, weight: .thin, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [paletteColors.glow, paletteColors.primary],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text("\(value)")
+                .font(.system(size: compact ? 48 : 72, weight: .thin, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [paletteColors.glow, paletteColors.primary],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                    .contentTransition(.numericText())
-                    .shadow(color: paletteColors.glow.opacity(0.35), radius: compact ? 10 : 16, y: 4)
+                )
+                .contentTransition(.numericText())
+                .shadow(color: paletteColors.glow.opacity(0.35), radius: compact ? 10 : 16, y: 4)
 
-                Text(unit)
-                    .font(.system(size: compact ? 20 : 28, weight: .light, design: .rounded))
-                    .foregroundStyle(palette.textSecondary)
-                    .offset(y: compact ? -4 : -8)
-            }
-
-            if let hint {
-                Text(hint)
-                    .font(compact ? .caption.weight(.medium) : .body.weight(.medium))
-                    .foregroundStyle(palette.textTertiary)
-            }
+            Text(unit)
+                .font(.system(size: compact ? 20 : 28, weight: .light, design: .rounded))
+                .foregroundStyle(palette.textSecondary)
+                .offset(y: compact ? -4 : -8)
         }
         .multilineTextAlignment(.center)
-    }
-}
-
-enum AnswerFormatting {
-    static func degreesPhrase(value: Int, unit: String) -> String {
-        TemperatureFormatting.degreesPhrase(value: value, unit: unit)
-    }
-}
-
-struct LearningStreakView: View {
-    let consecutiveCorrect: Int
-    let required: Int
-
-    @Environment(\.metricPalette) private var palette
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<required, id: \.self) { index in
-                Capsule()
-                    .fill(
-                        index < consecutiveCorrect
-                            ? AnyShapeStyle(MetricTheme.success)
-                            : AnyShapeStyle(palette.progressTrack)
-                    )
-                    .frame(width: index < consecutiveCorrect ? 22 : 10, height: 6)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.72), value: consecutiveCorrect)
-            }
-
-            Text("to learn")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(palette.textTertiary)
-        }
     }
 }
 
@@ -354,6 +251,8 @@ struct RoundProgressHeader: View {
     let roundLabel: String
     let learned: Int
     let total: Int
+    var metricLabel: String = "Learned"
+    var remainingCount: Int? = nil
     var compact: Bool = false
 
     @Environment(\.metricPalette) private var palette
@@ -385,6 +284,12 @@ struct RoundProgressHeader: View {
             Text("\(learned)/\(total)")
                 .font(.caption2.weight(.bold).monospacedDigit())
                 .foregroundStyle(palette.textSecondary)
+
+            if let remainingCount {
+                Text("\(remainingCount) left")
+                    .font(.caption2.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(palette.textTertiary)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -401,7 +306,7 @@ struct RoundProgressHeader: View {
                 Spacer()
 
                 VStack(spacing: 4) {
-                    Text("Learned")
+                    Text(metricLabel)
                         .font(.caption2.weight(.semibold))
                         .tracking(0.6)
                         .foregroundStyle(palette.textTertiary)
@@ -426,6 +331,12 @@ struct RoundProgressHeader: View {
                             .foregroundStyle(palette.textSecondary)
                     }
                     .frame(width: 40, height: 40)
+
+                    if let remainingCount {
+                        Text("\(remainingCount) left")
+                            .font(.caption2.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(palette.textTertiary)
+                    }
                 }
             }
 

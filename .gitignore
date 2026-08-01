@@ -1,0 +1,6 @@
+.DS_Store
+.build/
+Metricize/AppIconLayers/
+Metricize.xcodeproj/project.xcworkspace/xcuserdata/
+Metricize.xcodeproj/xcuserdata/
+*.xcuserstate

@@ -12,8 +12,4 @@ enum ChallengeLayout {
     static func current(size: CGSize) -> ChallengeLayout {
         size.width > size.height ? .sideBySide : .stacked
     }
-
-    static func current(verticalSizeClass: UserInterfaceSizeClass?) -> ChallengeLayout {
-        verticalSizeClass == .compact ? .sideBySide : .stacked
-    }
 }

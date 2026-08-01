@@ -8,6 +8,8 @@ import Observation
 
 @Observable
 final class ConversionCalculatorViewModel {
+    typealias ValueDisplayMode = ConversionFormatting.ValueDisplayMode
+
     var category: ConversionCategory = .distance {
         didSet { reconcileUnitsAfterCategoryChange() }
     }
@@ -17,39 +19,29 @@ final class ConversionCalculatorViewModel {
     var inputText: String = ""
     var result: ConversionResult?
     var inputError: String?
-    var isLandscape: Bool = false
-    var hasShownLandscapeHint: Bool {
-        get { UserDefaults.standard.bool(forKey: Self.landscapeHintKey) }
-        set { UserDefaults.standard.set(newValue, forKey: Self.landscapeHintKey) }
-    }
-
-    private static let landscapeHintKey = "metricize.conversion.landscapeHintShown"
+    var inputDisplayMode: ValueDisplayMode = .decimal
+    var outputDisplayMode: ValueDisplayMode = .decimal
+    private var outputDisplayModeOverridden = false
 
     var availableUnits: [ConversionUnit] {
-        ConversionUnit.units(for: category, landscape: isLandscape)
-    }
-
-    var showsLandscapeHint: Bool {
-        category.hasLandscapeExtras && !isLandscape && !hasShownLandscapeHint
-    }
-
-    var showsKitchenCompatibility: Bool {
-        category == .kitchen
-    }
-
-    var supportsMixedLengthInput: Bool {
-        category == .distance || category == .construction
+        category.units
     }
 
     var inputPlaceholder: String {
-        if supportsMixedLengthInput {
-            return "5 ft 10 in or 5, 10"
-        }
-        if sourceUnit.acceptsFractions || category == .construction {
-            return "Enter value or fraction"
-        }
-        return "Enter a value"
+        "Enter value or fraction"
     }
+
+    static let fractionDecimalToggleLabel = "Frac/Dec"
+
+    var fractionToggleLabel: String {
+        Self.fractionDecimalToggleLabel
+    }
+
+    var outputFractionToggleLabel: String {
+        Self.fractionDecimalToggleLabel
+    }
+
+    var showsOutputFormatToggle: Bool { true }
 
     var sourceDisplayText: String {
         guard !inputText.isEmpty else { return "—" }
@@ -64,36 +56,22 @@ final class ConversionCalculatorViewModel {
         ConversionUnitCompatibility.canConvert(from: sourceUnit, to: unit, category: category)
     }
 
-    func updateLandscape(_ landscape: Bool) {
-        isLandscape = landscape
-        if landscape, category.hasLandscapeExtras {
-            hasShownLandscapeHint = true
-        }
-    }
-
-    func dismissLandscapeHint() {
-        hasShownLandscapeHint = true
-    }
-
     func appendInput(_ token: String) {
         inputError = nil
         if token == "/" {
-            if inputText.contains("/") { return }
+            let lastSegment = inputText.split(separator: " ").last.map(String.init) ?? inputText
+            guard !lastSegment.contains("/") else { return }
             if inputText.isEmpty { inputText = "0" }
             inputText += "/"
         } else if token == " " {
             if inputText.isEmpty || inputText.hasSuffix(" ") { return }
             inputText += " "
-        } else if token == "," {
-            guard supportsMixedLengthInput else { return }
-            if inputText.contains(",") { return }
-            if inputText.isEmpty { return }
-            inputText += ","
         } else if token == "." {
             let lastSegment = inputText.split(separator: " ").last.map(String.init) ?? inputText
             guard !lastSegment.contains(".") else { return }
             if inputText.isEmpty { inputText = "0" }
             inputText += "."
+            inputDisplayMode = .decimal
         } else {
             inputText += token
         }
@@ -113,6 +91,29 @@ final class ConversionCalculatorViewModel {
         result = nil
     }
 
+    func toggleInputFractionDecimal() {
+        guard let value = parsedInputValue else { return }
+        switch inputDisplayMode {
+        case .decimal:
+            inputDisplayMode = .fraction
+            inputText = ConversionFormatting.formatInputFraction(
+                value: value,
+                unit: sourceUnit,
+                category: category
+            )
+        case .fraction:
+            inputDisplayMode = .decimal
+            inputText = ConversionFormatting.formatDecimal(value: value)
+        }
+        performConversion()
+    }
+
+    func toggleOutputFractionDecimal() {
+        outputDisplayModeOverridden = true
+        outputDisplayMode = outputDisplayMode == .fraction ? .decimal : .fraction
+        performConversion()
+    }
+
     func swapUnits() {
         guard isTargetCompatible(sourceUnit) || ConversionUnitCompatibility.canConvert(
             from: targetUnit,
@@ -125,9 +126,15 @@ final class ConversionCalculatorViewModel {
         targetUnit = previousSource
 
         if let currentResult = result {
-            inputText = ConversionFormatting.format(value: currentResult.numericValue, unit: sourceUnit, isInput: true)
+            inputText = ConversionFormatting.formatForInputSwap(
+                value: currentResult.numericValue,
+                unit: sourceUnit,
+                category: category,
+                displayMode: inputDisplayMode
+            )
         }
         reconcileTargetUnit()
+        applyDefaultOutputDisplayMode()
         performConversion()
     }
 
@@ -138,22 +145,14 @@ final class ConversionCalculatorViewModel {
     func selectSourceUnit(_ unit: ConversionUnit) {
         sourceUnit = unit
         reconcileTargetUnit()
+        applyDefaultOutputDisplayMode()
         performConversion()
     }
 
     func selectTargetUnit(_ unit: ConversionUnit) {
         guard isTargetCompatible(unit) else { return }
         targetUnit = unit
-        performConversion()
-    }
-
-    func applyVoiceRequest(_ request: VoiceConversionRequest) {
-        category = request.category
-        sourceUnit = request.sourceUnit
-        targetUnit = request.targetUnit
-        inputText = request.inputText
-        inputError = request.confidence < 0.6 ? "Check the interpreted values below." : nil
-        reconcileTargetUnit()
+        applyDefaultOutputDisplayMode()
         performConversion()
     }
 
@@ -161,8 +160,11 @@ final class ConversionCalculatorViewModel {
         self.category = category
         sourceUnit = unit
         inputText = value
+        inputDisplayMode = value.contains("/") ? .fraction : .decimal
         inputError = nil
+        outputDisplayModeOverridden = false
         reconcileTargetUnit()
+        applyDefaultOutputDisplayMode()
         performConversion()
     }
 
@@ -180,13 +182,11 @@ final class ConversionCalculatorViewModel {
 
         switch ConversionEngine.convert(input: inputText, from: sourceUnit, to: targetUnit, category: category) {
         case .success(let conversionResult):
-            result = conversionResult
+            result = formattedResult(from: conversionResult.numericValue)
             inputError = nil
         case .failure(.invalidInput):
             result = nil
-            inputError = supportsMixedLengthInput
-                ? "Enter a number, fraction, or mixed length like 5 ft 10 in."
-                : "Enter a number or fraction like 3 3/32."
+            inputError = "Enter a number or fraction like 3 3/32."
         case .failure(.incompatibleUnits):
             result = nil
             inputError = "These units can't be converted together."
@@ -196,12 +196,44 @@ final class ConversionCalculatorViewModel {
         }
     }
 
+    private var parsedInputValue: Double? {
+        switch ConversionEngine.parseNumericInput(inputText, from: sourceUnit, category: category) {
+        case .success(let value):
+            return value
+        case .failure:
+            return nil
+        }
+    }
+
+    private func formattedResult(from numericValue: Double) -> ConversionResult {
+        let primary = ConversionFormatting.formatResult(
+            value: numericValue,
+            unit: targetUnit,
+            category: category,
+            displayMode: outputDisplayMode
+        )
+        let copyable = ConversionFormatting.copyableOutput(
+            value: numericValue,
+            unit: targetUnit,
+            category: category,
+            displayMode: outputDisplayMode
+        )
+        return ConversionResult(
+            numericValue: numericValue,
+            formattedValue: primary,
+            secondaryFormattedValue: nil,
+            copyableOutput: copyable
+        )
+    }
+
     private func reconcileUnitsAfterCategoryChange() {
         let units = availableUnits
         if !units.contains(sourceUnit) {
             sourceUnit = units.first ?? .inches
         }
+        outputDisplayModeOverridden = false
         reconcileTargetUnit()
+        applyDefaultOutputDisplayMode()
         performConversion()
     }
 
@@ -214,5 +246,13 @@ final class ConversionCalculatorViewModel {
         if !isTargetCompatible(targetUnit) {
             targetUnit = compatible.first ?? availableUnits.first(where: { $0 != sourceUnit }) ?? targetUnit
         }
+    }
+
+    private func applyDefaultOutputDisplayMode() {
+        guard !outputDisplayModeOverridden else { return }
+        outputDisplayMode = ConversionFormatting.defaultDisplayMode(
+            for: targetUnit,
+            category: category
+        )
     }
 }

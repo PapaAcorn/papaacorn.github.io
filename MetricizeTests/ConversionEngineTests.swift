@@ -23,7 +23,7 @@ final class ConversionEngineTests: XCTestCase {
     }
 
     func testMixedFractionInchesToMillimeters() throws {
-        let conversion = try ConversionEngine.convert(input: "3 3/32", from: .inchesFraction, to: .millimeters).get()
+        let conversion = try ConversionEngine.convert(input: "3 3/32", from: .inches, to: .millimeters).get()
         XCTAssertEqual(conversion.numericValue, 78.58125, accuracy: 0.01)
         XCTAssertTrue(conversion.copyableOutput.contains("mm"))
     }

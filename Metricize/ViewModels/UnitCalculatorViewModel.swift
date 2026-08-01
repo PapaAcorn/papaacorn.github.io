@@ -9,12 +9,18 @@ import Observation
 @Observable
 final class UnitCalculatorViewModel {
     var category: ConversionCategory {
-        didSet { reconcileUnitAfterCategoryChange() }
+        didSet {
+            reconcileUnitAfterCategoryChange()
+            applyDefaultDisplayMode()
+        }
     }
 
-    var unit: ConversionUnit
+    var unit: ConversionUnit {
+        didSet { applyDefaultDisplayMode() }
+    }
     var display: String = "0"
     var displayMode: DisplayMode = .decimal
+    private var fractionEntryActive = false
 
     private var accumulator: Double?
     private var pendingOperation: Operation?
@@ -36,30 +42,31 @@ final class UnitCalculatorViewModel {
     enum DisplayMode {
         case decimal
         case fraction
+
+        var formattingMode: ConversionFormatting.ValueDisplayMode {
+            switch self {
+            case .decimal: .decimal
+            case .fraction: .fraction
+            }
+        }
     }
 
     init(category: ConversionCategory, unit: ConversionUnit) {
         self.category = category
         self.unit = unit
+        applyDefaultDisplayMode()
     }
 
     var availableUnits: [ConversionUnit] {
         category.units
     }
 
-    var supportsFractionEntry: Bool {
-        unit.acceptsFractions
-            || unit == .inches
-            || unit == .feet
-            || category == .construction
-    }
+    var supportsFractionEntry: Bool { true }
 
-    var supportsFractionToggle: Bool {
-        supportsFractionEntry
-    }
+    var supportsFractionToggle: Bool { true }
 
     var fractionToggleLabel: String {
-        displayMode == .fraction ? "1.2" : "a/b"
+        ConversionCalculatorViewModel.fractionDecimalToggleLabel
     }
 
     var numericValue: Double? {
@@ -127,6 +134,8 @@ final class UnitCalculatorViewModel {
         guard !lastSegment.contains("/") else { return }
         if display.isEmpty { display = "0" }
         display += "/"
+        fractionEntryActive = true
+        displayMode = .fraction
     }
 
     func toggleFractionDecimal() {
@@ -134,11 +143,12 @@ final class UnitCalculatorViewModel {
         switch displayMode {
         case .decimal:
             displayMode = .fraction
-            display = formatAsFraction(value)
+            fractionEntryActive = true
         case .fraction:
             displayMode = .decimal
-            display = Self.formatForDisplay(value)
+            fractionEntryActive = false
         }
+        display = formatDisplayValue(value)
         enteringSecondOperand = false
     }
 
@@ -180,10 +190,11 @@ final class UnitCalculatorViewModel {
 
     func clear() {
         display = "0"
-        displayMode = .decimal
         accumulator = nil
         pendingOperation = nil
         enteringSecondOperand = false
+        fractionEntryActive = false
+        applyDefaultDisplayMode()
     }
 
     func backspace() {
@@ -199,20 +210,21 @@ final class UnitCalculatorViewModel {
     }
 
     private func formatDisplayValue(_ value: Double) -> String {
-        if displayMode == .fraction {
-            return formatAsFraction(value)
+        if usesFractionDisplay {
+            return ConversionFormatting.formatGeneralFraction(value: value)
         }
         return Self.formatForDisplay(value)
     }
 
-    private func formatAsFraction(_ value: Double) -> String {
-        switch unit {
-        case .feetFraction, .feet:
-            return FractionParser.formatFeetFraction(value)
-        case .inchesFraction, .inches:
-            return FractionParser.formatInchesFraction(value)
-        default:
-            return FractionParser.formatInchesFraction(value)
+    private var usesFractionDisplay: Bool {
+        displayMode == .fraction || fractionEntryActive
+    }
+
+    private func applyDefaultDisplayMode() {
+        displayMode = .decimal
+        fractionEntryActive = false
+        if let value = numericValue {
+            display = formatDisplayValue(value)
         }
     }
 
@@ -221,6 +233,7 @@ final class UnitCalculatorViewModel {
         if !units.contains(unit) {
             unit = units.first ?? .inches
         }
+        applyDefaultDisplayMode()
     }
 
     private func parseDisplay(_ text: String) -> Double? {

@@ -9,6 +9,8 @@ import Observation
 enum TemperatureGamePhase: Equatable {
     case playing(TemperatureCard)
     case showingTip(roundIndex: Int, tips: [String])
+    case showingSubRoundReview(roundIndex: Int, subRoundIndex: Int, items: [ConversionReviewItem])
+    case finalExamResult(passed: Bool, correct: Int, total: Int)
     case roundComplete(roundIndex: Int)
     case moduleComplete
 }
@@ -24,15 +26,25 @@ enum AnswerFeedback: Equatable {
 @MainActor
 final class TemperatureGameViewModel {
     let progressStore: TemperatureProgressStore
+    let settings: AppSettingsStore
 
     private(set) var phase: TemperatureGamePhase = .playing(TemperatureCurriculum.rounds[0].cards[0])
     private(set) var feedback: AnswerFeedback = .none
     private(set) var isSubmitting = false
     private var lastCardID: String?
 
-    init(progressStore: TemperatureProgressStore) {
+    init(progressStore: TemperatureProgressStore, settings: AppSettingsStore) {
         self.progressStore = progressStore
+        self.settings = settings
         resumeFromSavedState()
+    }
+
+    private var accuracyTolerance: Int {
+        settings.accuracyToleranceDegrees
+    }
+
+    private var isTakingFinalExam: Bool {
+        progressStore.isActiveFinalExamSession
     }
 
     var currentRound: TemperatureRound {
@@ -48,23 +60,12 @@ final class TemperatureGameViewModel {
             return
         }
 
-        if progressStore.shouldShowTipBeforeRound(progressStore.currentRoundIndex)
-            && progressStore.currentSubRoundIndex == 0 {
-            showTip(for: progressStore.currentRoundIndex)
+        if progressStore.isFinalExamRound(progressStore.currentRoundIndex) {
+            resumeFinalExam()
             return
         }
 
-        if progressStore.isSubRoundComplete(
-            progressStore.currentRoundIndex,
-            subRoundIndex: progressStore.currentSubRoundIndex
-        ) {
-            advanceFromCompletedSubRound()
-            return
-        }
-
-        if let nextCard = selectNextCard() {
-            transitionToCard(nextCard)
-        }
+        enterCurrentSubRound()
     }
 
     func submitSliderAnswer(guess: Int, for card: TemperatureCard) {
@@ -79,15 +80,41 @@ final class TemperatureGameViewModel {
         guard case .showingTip(let roundIndex, _) = phase else { return }
         progressStore.markTipSeen(forRound: roundIndex)
 
-        if let card = selectNextCard() {
-            transitionToCard(card)
-        } else if progressStore.isModuleComplete {
-            phase = .moduleComplete
+        if progressStore.isFinalExamRound(roundIndex) {
+            beginFinalExam()
+            return
         }
+
+        enterCurrentSubRound()
+    }
+
+    func dismissSubRoundReviewAndContinue() {
+        guard case .showingSubRoundReview(let roundIndex, let subRoundIndex, _) = phase else { return }
+        progressStore.acknowledgeSubRoundPreview(roundIndex: roundIndex, subRoundIndex: subRoundIndex)
+        lastCardID = nil
+        beginPracticingCurrentSubRound()
     }
 
     func continueAfterRoundComplete() {
         guard case .roundComplete = phase else { return }
+        resumeFromSavedState()
+    }
+
+    func retryFinalExam() {
+        feedback = .none
+        lastCardID = nil
+        progressStore.clearFinalExamSession()
+        beginFinalExam()
+    }
+
+    func acknowledgeExamPass() {
+        phase = .moduleComplete
+    }
+
+    func reviewEarlierRoundsAfterExam() {
+        feedback = .none
+        lastCardID = nil
+        progressStore.repositionForLearningReview()
         resumeFromSavedState()
     }
 
@@ -98,35 +125,108 @@ final class TemperatureGameViewModel {
         resumeFromSavedState()
     }
 
+    func redoSubRound(roundIndex: Int, subRoundIndex: Int) {
+        guard !progressStore.isFinalExamRound(roundIndex) else { return }
+        feedback = .none
+        lastCardID = nil
+        progressStore.prepareToRedoSubRound(roundIndex: roundIndex, subRoundIndex: subRoundIndex)
+        enterCurrentSubRound()
+    }
+
+    func redoFinalExam() {
+        guard progressStore.canAccessFinalExam else { return }
+        feedback = .none
+        lastCardID = nil
+        progressStore.prepareToRedoFinalExam()
+        beginFinalExam()
+    }
+
     // MARK: - Private
+
+    private func resumeFinalExam() {
+        if progressStore.shouldShowTipBeforeRound(TemperatureGameConstants.finalExamRoundIndex) {
+            showTip(for: TemperatureGameConstants.finalExamRoundIndex)
+            return
+        }
+
+        if let session = progressStore.finalExamSession {
+            if session.isComplete {
+                presentFinalExamResult(from: session)
+            } else if progressStore.currentExamCard() != nil {
+                showCurrentExamCard()
+            } else if session.questions.isEmpty {
+                beginFinalExam()
+            } else {
+                presentFinalExamResult(from: session)
+            }
+            return
+        }
+
+        if progressStore.areLearningRoundsComplete() {
+            beginFinalExam()
+        }
+    }
+
+    private func beginFinalExam() {
+        let questions = TemperatureCurriculum.generateFinalExamQuestions()
+        progressStore.startFinalExamSession(questions)
+        showCurrentExamCard()
+    }
 
     private func submitAnswer(guess: Int, for card: TemperatureCard) {
         guard !isSubmitting else { return }
         isSubmitting = true
 
-        let target = card.correctAnswer
-        let result = TemperatureConversion.evaluate(guess: guess, target: target)
-        let isCorrect = result != .incorrect
-        progressStore.recordAnswer(for: card, correct: isCorrect)
-
-        switch result {
-        case .exact:
-            feedback = .exact(answer: target, unit: card.answerUnit)
-        case .closeEnough:
-            feedback = .closeEnough(answer: target, unit: card.answerUnit)
-        case .incorrect:
-            feedback = .incorrect(correctAnswer: target, unit: card.answerUnit)
+        if isTakingFinalExam {
+            submitExamAnswer(guess: guess, for: card)
+            return
         }
 
+        let target = card.correctAnswer
+        let result = TemperatureConversion.evaluate(guess: guess, target: target, tolerance: accuracyTolerance)
+        let isCorrect = result != .incorrect
+        progressStore.recordAnswer(for: card, correct: isCorrect)
+        presentFeedback(result: result, target: target, unit: card.answerUnit) {
+            self.continueAfterLearningAnswer(for: card)
+        }
+    }
+
+    private func submitExamAnswer(guess: Int, for card: TemperatureCard) {
+        let activeCard = progressStore.currentExamCard() ?? card
+        let target = activeCard.correctAnswer
+        let result = TemperatureConversion.evaluate(guess: guess, target: target, tolerance: accuracyTolerance)
+        let isCorrect = result != .incorrect
+        progressStore.recordFinalExamAnswer(correct: isCorrect)
+        presentFeedback(result: result, target: target, unit: activeCard.answerUnit) {
+            self.continueAfterExamAnswer()
+        }
+    }
+
+    private func presentFeedback(
+        result: TemperatureConversion.AnswerResult,
+        target: Int,
+        unit: String,
+        completion: @escaping () -> Void
+    ) {
+        switch result {
+        case .exact:
+            feedback = .exact(answer: target, unit: unit)
+        case .closeEnough:
+            feedback = .closeEnough(answer: target, unit: unit)
+        case .incorrect:
+            feedback = .incorrect(correctAnswer: target, unit: unit)
+        }
+
+        let isCorrect = result != .incorrect
         Task {
             try? await Task.sleep(for: .milliseconds(isCorrect ? 1800 : 3200))
             feedback = .none
             isSubmitting = false
-            continueAfterAnswer(for: card)
+            completion()
         }
     }
 
-    private func continueAfterAnswer(for card: TemperatureCard) {
+    private func continueAfterLearningAnswer(for card: TemperatureCard) {
         if progressStore.isSubRoundComplete(
             progressStore.currentRoundIndex,
             subRoundIndex: progressStore.currentSubRoundIndex
@@ -137,12 +237,39 @@ final class TemperatureGameViewModel {
         }
     }
 
+    private func continueAfterExamAnswer() {
+        guard let session = progressStore.finalExamSession else { return }
+        if session.isComplete {
+            presentFinalExamResult(from: session)
+        } else {
+            showCurrentExamCard()
+        }
+    }
+
+    private func showCurrentExamCard() {
+        guard let card = progressStore.currentExamCard() else { return }
+        lastCardID = nil
+        phase = .playing(card)
+    }
+
+    private func presentFinalExamResult(from session: FinalExamSession) {
+        let passed = session.correctCount >= TemperatureGameConstants.examPassCorrectCount
+        if passed {
+            progressStore.markFinalExamPassed()
+        } else {
+            progressStore.clearFinalExamSession()
+        }
+        phase = .finalExamResult(
+            passed: passed,
+            correct: session.correctCount,
+            total: session.totalQuestions
+        )
+    }
+
     private func advanceFromCompletedSubRound() {
         if progressStore.advanceSubRoundIfNeeded() {
             lastCardID = nil
-            if let next = selectNextCard() {
-                transitionToCard(next)
-            }
+            enterCurrentSubRound()
             return
         }
 
@@ -151,7 +278,62 @@ final class TemperatureGameViewModel {
         }
     }
 
+    private func beginPracticingCurrentSubRound() {
+        let roundIndex = progressStore.currentRoundIndex
+        let subRoundIndex = progressStore.currentSubRoundIndex
+
+        if progressStore.isSubRoundComplete(roundIndex, subRoundIndex: subRoundIndex) {
+            advanceFromCompletedSubRound()
+            return
+        }
+
+        if let nextCard = selectNextCard() {
+            transitionToCard(nextCard)
+        }
+    }
+
+    private func enterCurrentSubRound() {
+        if isTakingFinalExam {
+            showCurrentExamCard()
+            return
+        }
+
+        let roundIndex = progressStore.currentRoundIndex
+        let subRoundIndex = progressStore.currentSubRoundIndex
+
+        if subRoundIndex == 0,
+           progressStore.shouldShowTipBeforeRound(roundIndex) {
+            showTip(for: roundIndex)
+            return
+        }
+
+        if presentSubRoundReviewIfNeeded() {
+            return
+        }
+
+        if progressStore.isSubRoundComplete(roundIndex, subRoundIndex: subRoundIndex) {
+            advanceFromCompletedSubRound()
+            return
+        }
+
+        if let nextCard = selectNextCard() {
+            transitionToCard(nextCard)
+        }
+    }
+
     private func transitionToCard(_ card: TemperatureCard) {
+        if isTakingFinalExam {
+            showCurrentExamCard()
+            return
+        }
+
+        let roundIndex = progressStore.currentRoundIndex
+        let subRoundIndex = progressStore.currentSubRoundIndex
+        if progressStore.shouldShowSubRoundPreview(roundIndex: roundIndex, subRoundIndex: subRoundIndex) {
+            presentSubRoundReviewIfNeeded()
+            return
+        }
+
         lastCardID = card.id
         phase = .playing(card)
     }
@@ -161,8 +343,13 @@ final class TemperatureGameViewModel {
         if nextRound < TemperatureCurriculum.rounds.count {
             progressStore.advanceToNextRoundIfNeeded()
             progressStore.unmarkTipSeen(forRound: nextRound)
+            progressStore.unmarkSubRoundPreview(roundIndex: nextRound, subRoundIndex: 0)
             lastCardID = nil
-            showTip(for: nextRound)
+            if TemperatureCurriculum.rounds[nextRound].isFinalExam {
+                showTip(for: nextRound)
+            } else {
+                enterCurrentSubRound()
+            }
         } else {
             phase = .moduleComplete
         }
@@ -175,10 +362,32 @@ final class TemperatureGameViewModel {
         )
     }
 
+    @discardableResult
+    private func presentSubRoundReviewIfNeeded() -> Bool {
+        let roundIndex = progressStore.currentRoundIndex
+        let subRoundIndex = progressStore.currentSubRoundIndex
+        guard progressStore.shouldShowSubRoundPreview(roundIndex: roundIndex, subRoundIndex: subRoundIndex) else {
+            return false
+        }
+
+        let items = TemperatureCurriculum.subRoundReviewItems(
+            forRound: roundIndex,
+            subRoundIndex: subRoundIndex
+        )
+        guard !items.isEmpty else { return false }
+
+        phase = .showingSubRoundReview(roundIndex: roundIndex, subRoundIndex: subRoundIndex, items: items)
+        return true
+    }
+
     private func selectNextCard(excluding excludedID: String? = nil) -> TemperatureCard? {
         let currentRoundIndex = progressStore.currentRoundIndex
         let currentCards = progressStore.currentSubRoundCards()
         var unlearnedCurrent = currentCards.filter { !progressStore.progress(for: $0).isLearned }
+
+        if progressStore.currentSubRoundIndex == TemperatureGameConstants.mixedSubRoundIndex {
+            unlearnedCurrent = currentCards.filter { !progressStore.progress(for: $0).isMixedLearned }
+        }
 
         let avoidID = excludedID ?? lastCardID
         if let avoidID {
@@ -209,8 +418,7 @@ final class TemperatureGameViewModel {
             pool = unlearnedCurrent.map { ($0, TemperatureGameConstants.currentRoundCardWeight) }
         }
 
-        // Review cards from earlier sub-rounds/rounds in the mixed sub-round only.
-        if progressStore.currentSubRoundIndex == 2 {
+        if progressStore.currentSubRoundIndex == TemperatureGameConstants.mixedSubRoundIndex {
             let reviewCards = TemperatureCurriculum.allCards.filter { reviewCard in
                 (reviewCard.roundIndex < currentRoundIndex
                     || (reviewCard.roundIndex == currentRoundIndex && isEarlierSubRound(reviewCard)))
@@ -248,10 +456,10 @@ final class TemperatureGameViewModel {
 }
 
 extension TemperatureGameViewModel {
-    static func multipleChoiceOptions(for card: TemperatureCard) -> [Int] {
+    func multipleChoiceOptions(for card: TemperatureCard) -> [Int] {
         let correct = card.correctAnswer
         let bounds = card.answerRange
-        let tolerance = TemperatureGameConstants.toleranceDegrees
+        let tolerance = accuracyTolerance
         var distractors = Set<Int>()
 
         let offsets = [4, 6, 8, 10, 12, 15, 18, -4, -6, -8, -10, -12, -15, -18, 22, -22, 28, -28]
@@ -285,7 +493,7 @@ extension TemperatureGameViewModel {
         return (Array(distractors.prefix(3)) + [correct]).shuffled()
     }
 
-    private static func isValidDistractor(
+    private func isValidDistractor(
         _ candidate: Int,
         correct: Int,
         bounds: ClosedRange<Int>,
